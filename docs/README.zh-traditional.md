@@ -1,6 +1,6 @@
 # pms-inspector
 
-[English](./README.md) · [简体中文](./README.zh-CN.md) · **繁體中文** · [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Français](./README.fr.md) · [Deutsch](./README.de.md) · [Español](./README.es.md)
+[English](../README.md) · [简体中文](./README.zh-simple.md) · **繁體中文** · [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Français](./README.fr.md) · [Deutsch](./README.de.md) · [Español](./README.es.md)
 
 **P/M/S = Plugin / MCP / Skill Inspector(外掛/MCP/Skill 檢查器)。**
 
@@ -113,4 +113,4 @@ grep -rn "pms-inspector" .
 
 ## 授權
 
-MIT —— 詳見 [LICENSE](./LICENSE)。
+MIT —— 詳見 [LICENSE](../LICENSE)。

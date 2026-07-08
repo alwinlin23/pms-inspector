@@ -1,6 +1,6 @@
 # pms-inspector
 
-[English](./README.md) · [简体中文](./README.zh-CN.md) · [繁體中文](./README.zh-TW.md) · [日本語](./README.ja.md) · **한국어** · [Français](./README.fr.md) · [Deutsch](./README.de.md) · [Español](./README.es.md)
+[English](../README.md) · [简体中文](./README.zh-simple.md) · [繁體中文](./README.zh-traditional.md) · [日本語](./README.ja.md) · **한국어** · [Français](./README.fr.md) · [Deutsch](./README.de.md) · [Español](./README.es.md)
 
 **P/M/S = Plugin / MCP / Skill Inspector(플러그인/MCP/스킬 인스펙터).**
 
@@ -113,4 +113,4 @@ grep -rn "pms-inspector" .
 
 ## 라이선스
 
-MIT ── [LICENSE](./LICENSE) 참조.
+MIT ── [LICENSE](../LICENSE) 참조.
