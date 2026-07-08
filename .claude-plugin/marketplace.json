@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Inspect Claude Code system-prompt overhead: skills, agents, MCP servers, hooks — with byte/token math, tuning suggestions, and multi-language UI (en/zh/ja/ko/fr/de/es).",
-    "version": "0.2.1"
+    "version": "0.2.2"
   },
   "plugins": [
     {
       "name": "pms-inspector",
       "source": "./",
       "description": "Inspect what your Claude Code session actually loads: skills, agents, MCP servers, hooks — with byte/token math, tuning suggestions, and multi-language UI.",
-      "version": "0.2.1",
+      "version": "0.2.2",
       "author": {
         "name": "pgg"
       },

@@ -30,24 +30,36 @@ startup.
 
 ## Implementation
 
-Run the inspector script and show its stdout verbatim to the user:
+Run the inspector script; redirect its stdout to a temp file so the Bash
+tool's own output box stays empty (avoids double-rendering the report body
+next to the assistant message):
 
 ```bash
 PMS_ROOT="${CLAUDE_PLUGIN_ROOT:-$(ls -td "$HOME/.claude/plugins/cache/pms-inspector/pms-inspector"/*/ 2>/dev/null | head -1)}"
-node "${PMS_ROOT%/}/scripts/inspect.js" $ARGUMENTS
+OUT="$(mktemp -t pms-inspector.XXXXXX)"
+node "${PMS_ROOT%/}/scripts/inspect.js" $ARGUMENTS > "$OUT" 2>&1
+echo "$OUT"
 ```
 
-`$CLAUDE_PLUGIN_ROOT` is set by Claude Code at slash-command time, but is not always propagated into the Bash tool subprocess. The fallback picks the latest installed version under `~/.claude/plugins/cache/pms-inspector/pms-inspector/`.
+The Bash tool will print only the temp-file path. `$CLAUDE_PLUGIN_ROOT` is
+set by Claude Code at slash-command time, but is not always propagated into
+the Bash tool subprocess. The fallback picks the latest installed version
+under `~/.claude/plugins/cache/pms-inspector/pms-inspector/`.
 
 ## What to Do
 
-1. Execute the script above with any `$ARGUMENTS` the user supplied.
+1. Execute the script above with any `$ARGUMENTS` the user supplied. The
+   Bash tool prints only the temp-file path — take that path, `Read` the
+   file, and you have the full report text.
 2. **Parse** the final `<pms-plans>{"verdict":"...","plans":[...]}</pms-plans>`
-   JSON line (last such block; ignore any inside code fences quoted earlier).
-   Then display the stdout to the user with the entire `<pms-plans>...`
-   trailing block **stripped out** — that block is metadata for you, not for
-   the user. Do not summarize or rewrite the rest of the report; it is
-   already formatted.
+   JSON line from the report (last such block; ignore any inside code
+   fences quoted earlier). Then post the report to the user as your own
+   message body, verbatim, with the entire `<pms-plans>...</pms-plans>`
+   trailing block **stripped out**. Do not summarize, rewrap, or rewrite
+   — the report is already formatted (box-drawing chars + visual-width
+   padding rely on being shown as-is inside a plain fenced code block).
+   Wrap the report in a fenced code block so terminal box-drawing chars
+   render.
 3. Based on the parsed verdict:
    - `verdict === "ok"` → done. Do not ask anything further, do not print any
      extra message.
