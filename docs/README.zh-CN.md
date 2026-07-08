@@ -1,6 +1,6 @@
 # pms-inspector
 
-[English](../README.md) · **简体中文** · [繁體中文](./README.zh-traditional.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Français](./README.fr.md) · [Deutsch](./README.de.md) · [Español](./README.es.md)
+[English](../README.md) · **简体中文** · [繁體中文](./README.zh-TW.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Français](./README.fr.md) · [Deutsch](./README.de.md) · [Español](./README.es.md)
 
 **P/M/S = Plugin / MCP / Skill Inspector(插件/MCP/Skill 检查器)。**
 
