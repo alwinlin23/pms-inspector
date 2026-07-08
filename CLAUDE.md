@@ -14,7 +14,9 @@ Distinct from the built-in `/context`: that shows *runtime* state (current conve
 .claude-plugin/plugin.json       Plugin manifest — declares commands/ dir.
 .claude-plugin/marketplace.json  Marketplace entry — consumed by `/plugin marketplace add`.
 commands/pms-inspector.md        Slash-command definition (frontmatter + Bash body).
-scripts/inspect.js               Single-file audit script — the entire runtime.
+scripts/inspect.js               Audit script entry point (pipeline + rendering).
+scripts/lib/i18n.js              Multi-language dictionary (8 langs) + language detection.
+scripts/lib/width.js             East-Asian-Width aware column arithmetic for table alignment.
 ```
 
 The command markdown does one thing — shell out to the script, with a fallback resolver for `$CLAUDE_PLUGIN_ROOT`:
@@ -26,21 +28,23 @@ node "${PMS_ROOT%/}/scripts/inspect.js" $ARGUMENTS
 
 **Why the fallback is required (verified 2026-07-08)**: Claude Code sets `$CLAUDE_PLUGIN_ROOT` for slash-command *frontmatter substitution*, but it does not always propagate into the Bash tool's subprocess environment — `env | grep CLAUDE_PLUGIN_ROOT` inside the tool returns nothing, and `node "$CLAUDE_PLUGIN_ROOT/scripts/inspect.js"` collapses to `/scripts/inspect.js` (module-not-found). The fallback walks the CC-mandated cache path `~/.claude/plugins/cache/<plugin-name>/<plugin-name>/<version>/`. This is a lighter version of ecc's `resolve-ecc-root` node oneliner and serves the same purpose.
 
-## The one script
+## The script pipeline
 
-`scripts/inspect.js` is ~400 lines of pure Node (fs / path / os only — zero npm deps). Pipeline:
+`scripts/inspect.js` is the entry (~450 lines pure Node — fs / path / os, plus `require('./lib/i18n')` and `require('./lib/width')`; still **zero npm deps**). Pipeline:
 
 ```
-parseArgs → findEnabledPluginRoots → collectSkills / collectAgents / collectMcp / collectHooks
-         → applyBudget (four-way skill classifier) → build (assemble report)
-         → suggest → renderHuman | renderJson
+parseArgs → detectLang (i18n.js) → build:
+  findEnabledPluginRoots → collectSkills / collectAgents / collectMcp / collectHooks
+  → applyBudget (four-way skill classifier) → assemble report
+→ suggest → renderHuman (via t() + boxTop/boxRow with visual-width padding) | renderJson
 ```
 
-Key constants at top of file:
-- `DEFAULT_FRACTION = 0.01` — Claude Code default `skillListingBudgetFraction`. At this value on a busy plugin setup, all skill descriptions collapse to name-only.
-- `DEFAULT_MAX_DESC = 1536` — Claude Code default `skillListingMaxDescChars`.
+Key constants at top of `inspect.js`:
+- `DEFAULT_FRACTION = 0.01` — CC default `skillListingBudgetFraction`. On a busy plugin setup, all skill descriptions collapse to name-only.
+- `DEFAULT_MAX_DESC = 1536` — CC default `skillListingMaxDescChars`.
 - `DEFAULT_CTX_TOKENS = 200000` — assumed context window; user-overridable via `--ctx`.
 - `CHARS_PER_TOKEN = 4` — coarse token estimate used everywhere.
+- `INNER_W = 66` — every box's inner width in visual columns. All rows pad to this via `padEndVisual` from `lib/width.js` so tables line up on any mix of ASCII/CJK/emoji.
 
 The four-way skill load state produced by `applyBudget` is the whole point of the tool. Every UI, JSON field, and suggestion routes back to this classification:
 
@@ -54,14 +58,35 @@ The four-way skill load state produced by `applyBudget` is the whole point of th
 ## Reads (never writes)
 
 The script reads and never writes:
-- `~/.claude/settings.json` — only these keys: `enabledPlugins`, `skillListingBudgetFraction`, `skillListingMaxDescChars`, `mcpServers`, `hooks`. It **must not** touch `ANTHROPIC_AUTH_TOKEN` or any auth field.
+- `~/.claude/settings.json` — only these keys: `enabledPlugins`, `skillListingBudgetFraction`, `skillListingMaxDescChars`, `mcpServers`, `hooks`, `language` (for i18n auto-detect). It **must not** touch `ANTHROPIC_AUTH_TOKEN` or any auth field.
 - `~/.claude/plugins/cache/<owner>/<plugin>/<version>/**/{SKILL.md,agents/*.md,.claude-plugin/plugin.json}`.
+
+## i18n architecture (as of v0.2.0)
+
+- **Supported languages**: `en, zh-CN, zh-TW, ja, ko, fr, de, es` (8). Adding a language = one new entry in `DICT` in `scripts/lib/i18n.js`; nothing else. Missing keys auto-fall back to `en`.
+- **Detection order** (highest first, first match wins):
+  1. `--lang <code>` CLI flag
+  2. `~/.claude/settings.json` → `language` field (accepts local names like `"简体中文"`, `"日本語"`, `"français"` — see `CC_LANGUAGE_ALIASES` in `i18n.js`)
+  3. `$LC_ALL` / `$LANG` / `$LANGUAGE` env vars (POSIX form like `en_US.UTF-8` is stripped of `.codeset` before matching)
+  4. Fallback to `en`
+- **Template placeholders**: `{n}`, `{v}`, `{pct}`, `{frac}` etc. Render with `fmt(tpl, params)`. Don't concatenate translated fragments — one dict entry per complete sentence to avoid grammar breakage.
+- **Never** add ANSI colors to translated strings — `lib/width.js` doesn't strip escape codes, so colors would break alignment.
+
+## Table alignment
+
+- **Never** use raw `.padEnd()` / `.padStart()` on strings that may contain CJK / emoji — they count code units, not visible columns.
+- Use `padEndVisual` / `padStartVisual` / `truncateVisual` from `lib/width.js` for anything inside a box.
+- **East Asian Ambiguous chars** (`✂ U+2702`, `⚠ U+26A0`, `·`) render 1-col in some terminals, 2-col in others. In `inspect.js` the status-block marker column is normalized to 2 cols via `padEndVisual(marker, 2)` — safe on both.
+- The single-column `boxRow(text)` auto-wraps if `displayWidth(text) > INNER_W - 2` (used by `suggest()`). The two-column `boxRow2col(left, right)` **does not** wrap: it truncates the left column with `…`. Prefer `boxRow` for suggestion / warning lines that may translate to long strings.
 
 ## Common commands
 
 ```bash
-# Smoke tests (run these on any change to inspect.js)
-node scripts/inspect.js                    # human-readable report
+# Smoke tests (run these on any change to inspect.js / lib/*)
+node scripts/inspect.js                    # human-readable report (auto lang)
+node scripts/inspect.js --lang en          # force English
+node scripts/inspect.js --lang zh-CN       # force zh-CN — verify alignment on CJK
+node scripts/inspect.js --lang de          # force German — has longest labels, catches width bugs
 node scripts/inspect.js --json             # JSON (must remain machine-parseable)
 node scripts/inspect.js --verbose          # per-skill breakdown
 node scripts/inspect.js --ctx 128000       # override assumed context window

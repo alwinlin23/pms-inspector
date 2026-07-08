@@ -13,11 +13,15 @@ This is **not** the built-in `/context` command. `/context` shows runtime state 
 ## Usage
 
 ```
-/pms-inspector                    # Human-readable summary
+/pms-inspector                    # Human-readable summary (auto-detects language)
 /pms-inspector --json             # Machine-readable JSON
 /pms-inspector --ctx 200000       # Override assumed context window (default 200000)
 /pms-inspector --verbose          # Per-skill breakdown
+/pms-inspector --lang zh-CN       # Force display language (en / zh-CN / zh-TW / ja / ko / fr / de / es)
 ```
+
+Language is picked automatically in this order:
+`--lang` flag → `~/.claude/settings.json` `language` field (accepts local names like "简体中文") → `$LC_ALL` / `$LANG` / `$LANGUAGE` → fallback to `en`.
 
 ## Implementation
 

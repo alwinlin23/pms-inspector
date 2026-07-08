@@ -36,11 +36,21 @@ Then, in a new Claude Code session:
 ## Usage
 
 ```
-/pms-inspector                    # Human-readable summary
+/pms-inspector                    # Human-readable summary (auto-detects language)
 /pms-inspector --json             # Machine-readable JSON
 /pms-inspector --ctx 200000       # Override assumed context window
 /pms-inspector --verbose          # Per-skill breakdown
+/pms-inspector --lang zh-CN       # Force display language
 ```
+
+## Multi-language UI
+
+`pms-inspector` speaks 8 languages: **en, zh-CN, zh-TW, ja, ko, fr, de, es**. It auto-detects the display language from (in priority):
+
+1. `--lang <code>` CLI flag
+2. `~/.claude/settings.json` → `language` field (also accepts local names like `"简体中文"`, `"日本語"`, `"français"`)
+3. `$LC_ALL` / `$LANG` / `$LANGUAGE` env vars
+4. Fallback to `en`
 
 You can also run the script directly, without installing as a plugin:
 
@@ -52,25 +62,37 @@ node scripts/inspect.js --json
 ## Example output (abridged)
 
 ```
-Claude Code Loadout Report
-──────────────────────────
-Plugins enabled:      2         (ecc, claude-mem)
-MCP servers:          2
-Skills discovered:  294
-Agents discovered:   67
-Hooks configured:     6
+═══ Claude Code Context Inspector ═══
+Language: en (override via --lang, e.g. --lang zh-CN)
 
-Skill load states (skillListingBudgetFraction=0.15, maxDescChars=200):
-  full             : 294  (100.0%)
-  desc-truncated   :   0
-  budget-compressed:   0
-  name-only        :   0
+Set in: ~/.claude/settings.json
+  context window: 200,000 tokens (~800,000 chars)
+  skillListingBudgetFraction = 0.15
+     ↳ fraction of ctx reserved for skill listing (CC setting; default 0.01)
+     ↳ budget 120,000 chars (15.00% of ctx)
+  skillListingMaxDescChars = 1536
+     ↳ per-skill description char cap (CC setting; default 1536)
+  enabled plugins: claude-mem, ecc, andrej-karpathy-skills, pms-inspector
 
-Est. system-prompt cost: 18,750 tokens  (9.4% of 200k ctx)
+┌─ Overview ───────────────────────────────────────────────────────┐
+│ Skills :  295   Agents :   67   MCP :   2   Hooks :    2         │
+└──────────────────────────────────────────────────────────────────┘
 
-Suggestions:
-  A) You already see everything. If ctx is tight, try 0.10 → drops ~6k tokens.
-  B) Lowering maxDescChars from 200 to 120 would save ~4k tokens.
+┌─ Skill listing char budget ──────────────────────────────────────┐
+│ Full (name+desc, uncut)             18,807 tokens / 75,228 chars │
+│ After per-cap (≤1536/skill)         18,807 tokens / 75,228 chars │
+│ Budget (0.15 × ctx)                30,000 tokens / 120,000 chars │
+│ Final injected into system prompt   18,807 tokens / 75,228 chars │
+│ Percent of ctx window                                      9.40% │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ Skill description load status ──────────────────────────────────┐
+│ ✅ Full                                295 (100.00%) ==========  │
+│ ✂  Truncated by MaxDescChars             0 (  0.00%)             │
+│ ⚠  Compressed by BudgetFraction          0 (  0.00%)             │
+│ ❌ Name only                             0 (  0.00%)             │
+│ ·  No description                        0 (  0.00%)             │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ## Safety

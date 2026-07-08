@@ -2,10 +2,10 @@
 /**
  * pms-inspector / inspect.js — 零依赖 Node,只读诊断。
  * caller: commands/pms-inspector.md 通过 `node "$CLAUDE_PLUGIN_ROOT/scripts/inspect.js"` 调用。
- * reads: ~/.claude/settings.json (仅 enabledPlugins, skillListing 相关的两个 knob, mcpServers, hooks; 不读 auth),
+ * reads: ~/.claude/settings.json (仅 enabledPlugins, skillListing 相关的两个 knob, mcpServers, hooks, language; 不读 auth),
  *        cache 下已启用 plugin 的 SKILL.md, agents 下的 .md, .claude-plugin/plugin.json.
  * writes: 无.
- * user asked: 把 skill/mcp/plugin 加载情况检查过程封装成 claudecode plugin.
+ * i18n: 支持 8 种语言, 通过 ~/.claude/settings.json 的 language 字段或 --lang 参数选择.
  */
 
 'use strict';
@@ -13,22 +13,27 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { displayWidth, padEndVisual, padStartVisual, truncateVisual } = require('./lib/width');
+const { detectLang, makeT, SUPPORTED_LANGS } = require('./lib/i18n');
 
 const DEFAULT_FRACTION = 0.01;
 const DEFAULT_MAX_DESC = 1536;
 const DEFAULT_CTX_TOKENS = 200000;
 const CHARS_PER_TOKEN = 4;
 const FRAME_OH = 24;
+const INNER_W = 66; // 表格内容区宽度 (不含左右边框). 66 覆盖大多数中英混排;
 
 function parseArgs(argv) {
-  const args = { json: false, ctx: DEFAULT_CTX_TOKENS, verbose: false };
+  const args = { json: false, ctx: DEFAULT_CTX_TOKENS, verbose: false, lang: null };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--json') args.json = true;
     else if (a === '--verbose' || a === '-v') args.verbose = true;
     else if (a === '--ctx') args.ctx = parseInt(argv[++i], 10) || DEFAULT_CTX_TOKENS;
+    else if (a === '--lang') args.lang = argv[++i];
     else if (a === '--help' || a === '-h') {
-      console.log('Usage: node inspect.js [--json] [--ctx <tokens>] [--verbose]');
+      console.log('Usage: node inspect.js [--json] [--ctx <tokens>] [--verbose] [--lang <code>]');
+      console.log('Supported languages: ' + SUPPORTED_LANGS.join(', '));
       process.exit(0);
     }
   }
@@ -231,9 +236,9 @@ function applyBudget(rawSkills, maxDesc, budget) {
 
 const fmtInt = n => n.toLocaleString('en-US');
 const fmtPct = (n, d) => d > 0 ? (n * 100 / d).toFixed(2) + '%' : 'n/a';
-const fmtTk = c => `${fmtInt(Math.floor(c / CHARS_PER_TOKEN))} tk / ${fmtInt(c)} ch`;
+function fmtTk(chars, t) { return `${fmtInt(Math.floor(chars / CHARS_PER_TOKEN))} ${t('tokens')} / ${fmtInt(chars)} ${t('chars')}`; }
 
-function build(args) {
+function build(args, lang) {
   const home = os.homedir();
   const settings = readJson(path.join(home, '.claude', 'settings.json'));
   if (!settings) { process.stderr.write('[fatal] cannot read ~/.claude/settings.json\n'); process.exit(1); }
@@ -248,103 +253,187 @@ function build(args) {
   const mcp = collectMcp(settings, roots);
   const hooks = collectHooks(settings, roots);
   const budgeted = applyBudget(rawSkills, maxDesc, budget);
-  return { ctxTokens, ctxChars, fraction, maxDesc, budget, enabledPlugins: roots.map(r => r.label),
-    pluginRoots: roots, skills: budgeted.entries, agents, mcp, hooks, totals: budgeted };
+  return {
+    lang, ctxTokens, ctxChars, fraction, maxDesc, budget,
+    enabledPlugins: roots.map(r => r.label),
+    pluginRoots: roots, skills: budgeted.entries, agents, mcp, hooks, totals: budgeted,
+    settingsLanguage: settings.language || null,
+  };
 }
 
-function suggest(rep) {
+/* ─── 表格排版工具 ────────────────────────────────────────────────
+ * 所有边框都由 makeFrame() 生成, INNER_W 恒定, 保证左右框对齐. 内容行
+ * 通过 padEndVisual/padStartVisual 按可见列数(East Asian Width)填充,
+ * 中英混排也能对齐. */
+function boxTop(title) {
+  const inner = INNER_W;
+  const titleStr = ` ${title} `;
+  const remain = inner - displayWidth(titleStr) - 1;
+  const dashesR = remain > 0 ? '─'.repeat(remain) : '';
+  return `┌─${titleStr}${dashesR}┐`;
+}
+function boxBot() { return `└${'─'.repeat(INNER_W)}┘`; }
+/** 单列行. 内容超宽则按可见列换行成多行,每行首尾补齐. */
+function boxRow(text) {
+  const usable = INNER_W - 2;
+  const chars = [...String(text)];
+  const rows = [];
+  let cur = '', w = 0;
+  for (const ch of chars) {
+    const cw = displayWidth(ch);
+    if (w + cw > usable) { rows.push(cur); cur = ''; w = 0; }
+    cur += ch; w += cw;
+  }
+  if (cur.length || rows.length === 0) rows.push(cur);
+  return rows.map(r => `│ ${padEndVisual(r, usable)} │`).join('\n');
+}
+/** 双列行 (左自适应 + 右对齐). 左侧不换行,超宽截断加 …. */
+function boxRow2col(left, right) {
+  const rw = displayWidth(right);
+  const leftMax = INNER_W - 2 - rw - 2;
+  const l = padEndVisual(truncateVisual(left, leftMax), leftMax);
+  return `│ ${l}  ${right} │`;
+}
+
+function suggest(rep, t) {
   const { totals, budget, ctxChars, fraction, skills } = rep;
   const need = totals.totalAfterCap;
   const lines = [];
   if (need <= budget) {
     const headroom = (budget - need) * 100 / Math.max(1, budget);
-    lines.push('│ ✅ 当前预算够用,所有 skill 描述都能完整注入 (per-cap 后)');
-    lines.push(`│    还剩 ${headroom.toFixed(1)}% 预算余量`);
+    lines.push(t('suggestOk'));
+    lines.push(t('suggestHeadroom', { pct: headroom.toFixed(1) }));
     if (fraction > 0.05 && headroom > 60) {
       const newFrac = +(need / ctxChars * 1.2).toFixed(3);
-      lines.push(`│ 💡 预算显得偏大,可下调 skillListingBudgetFraction 至 ${newFrac} 省 ctx`);
+      lines.push(t('suggestFractionLower', { v: newFrac }));
     }
   } else {
     const needFrac = Math.min(1, +(need / ctxChars + 0.005).toFixed(3));
-    lines.push(`│ ⚠  当前预算 ${fmtInt(budget)} chars 装不下 ${fmtInt(need)} chars`);
-    lines.push(`│ 方案 A (推荐): 抬 skillListingBudgetFraction 至 ${needFrac}`);
-    lines.push(`│   → 每 turn 多花 ${fmtTk(need - budget)},换取所有描述完整加载`);
+    lines.push(t('suggestOverflow', { b: fmtInt(budget), n: fmtInt(need) }));
+    lines.push(t('suggestPlanA', { v: needFrac }));
+    lines.push(t('suggestPlanACost', { t: fmtTk(need - budget, t) }));
     const n = Math.max(1, skills.length);
     const totalNameOh = skills.reduce((s, x) => s + x.name.length + FRAME_OH, 0);
     const avgDescBudget = Math.max(0, (budget - totalNameOh) / n);
     if (avgDescBudget >= 50) {
-      lines.push(`│ 方案 B: 降 skillListingMaxDescChars 至 ~${Math.floor(avgDescBudget)}`);
-      lines.push(`│   → 保持当前 fraction=${fraction},让每个 skill 都拿到一段短描述`);
+      lines.push(t('suggestPlanB', { v: Math.floor(avgDescBudget) }));
+      lines.push(t('suggestPlanBEffect', { frac: fraction }));
     }
     const bySrc = {};
     for (const s of skills) bySrc[s.source] = (bySrc[s.source] || 0) + 1;
     const top = Object.entries(bySrc).sort((a, b) => b[1] - a[1])[0];
-    if (top && top[1] > n * 0.5) lines.push(`│ 方案 C: 关掉贡献最大的 plugin ${top[0]} 可减 ${top[1]} 个 skill`);
+    if (top && top[1] > n * 0.5) lines.push(t('suggestPlanC', { p: top[0], n: top[1] }));
   }
-  lines.push('│');
-  lines.push('│ 通用建议: 用不上的 skill 关掉最省;都要用则至少保证 name+full description 装得下');
+  lines.push('');
+  lines.push(t('suggestCommon'));
   return lines;
 }
 
-function renderHuman(rep, args) {
+function renderHuman(rep, args, t) {
   const out = [];
   const { totals, ctxTokens, ctxChars, fraction, maxDesc, budget, enabledPlugins, skills, agents, mcp, hooks } = rep;
-  out.push('═══ Claude Code Context Inspector ═══');
+
+  // 头部
+  out.push('═══ ' + t('title') + ' ═══');
+  out.push(t('langHint', { code: rep.lang }));
   out.push('');
-  out.push(`ctx window            : ${fmtInt(ctxTokens)} tokens (~${fmtInt(ctxChars)} chars)`);
-  out.push(`skillListingBudgetFraction : ${fraction}   →  预算 ${fmtInt(budget)} chars  (${fmtPct(budget, ctxChars)} of ctx)`);
-  out.push(`skillListingMaxDescChars   : ${maxDesc}`);
-  out.push(`已启用 plugin         : ${enabledPlugins.join(', ') || '(无)'}`);
+
+  // 参数解释区
+  out.push(t('knobsHint'));
+  out.push(`  ${t('ctxWindow')}: ${fmtInt(ctxTokens)} ${t('tokens')} (~${fmtInt(ctxChars)} ${t('chars')})`);
+  out.push(`  ${t('budgetFractionLabel')} = ${fraction}`);
+  out.push(`     ↳ ${t('budgetFractionHelp')}`);
+  out.push(`     ↳ ${t('budgetOf', { n: fmtInt(budget), pct: fmtPct(budget, ctxChars) })}`);
+  out.push(`  ${t('maxDescLabel')} = ${maxDesc}`);
+  out.push(`     ↳ ${t('maxDescHelp')}`);
+  out.push(`  ${t('enabledPlugins')}: ${enabledPlugins.join(', ') || t('none')}`);
   out.push('');
-  out.push('┌─ 对象总览 ─────────────────────────────────────────────┐');
-  out.push(`│  Skills : ${String(skills.length).padStart(4)}   Agents : ${String(agents.length).padStart(4)}   MCP : ${String(mcp.length).padStart(3)}   Hooks : ${String(hooks.length).padStart(4)}  │`);
-  out.push('└────────────────────────────────────────────────────────┘');
+
+  // 对象总览 (4 列自适应表格)
+  out.push(boxTop(t('sectionOverview')));
+  const colsPart = [
+    `${t('colSkills')} : ${padStartVisual(skills.length, 4)}`,
+    `${t('colAgents')} : ${padStartVisual(agents.length, 4)}`,
+    `${t('colMcp')} : ${padStartVisual(mcp.length, 3)}`,
+    `${t('colHooks')} : ${padStartVisual(hooks.length, 4)}`,
+  ];
+  out.push(boxRow(colsPart.join('   ')));
+  out.push(boxBot());
   out.push('');
-  out.push('┌─ Skill listing 字符预算 ───────────────────────────────┐');
-  out.push(`│ 全量 (name+desc, 未裁剪)     : ${fmtTk(totals.totalFull).padStart(30)} │`);
-  out.push(`│ per-cap 后 (≤${maxDesc}/skill)        : ${fmtTk(totals.totalAfterCap).padStart(30)} │`);
-  out.push(`│ 预算 (${fraction} × ctx)              : ${fmtTk(budget).padStart(30)} │`);
-  out.push(`│ 最终注入到系统提示           : ${fmtTk(totals.totalFinal).padStart(30)} │`);
-  out.push(`│ 占 ctx 窗口                  : ${fmtPct(totals.totalFinal, ctxChars).padStart(30)} │`);
-  out.push('└────────────────────────────────────────────────────────┘');
+
+  // 预算表 (右对齐数值)
+  out.push(boxTop(t('sectionBudget')));
+  out.push(boxRow2col(t('rowFullUncut'), fmtTk(totals.totalFull, t)));
+  out.push(boxRow2col(t('rowAfterCap', { n: maxDesc }), fmtTk(totals.totalAfterCap, t)));
+  out.push(boxRow2col(t('rowBudgetLine', { frac: fraction }), fmtTk(budget, t)));
+  out.push(boxRow2col(t('rowFinal'), fmtTk(totals.totalFinal, t)));
+  out.push(boxRow2col(t('rowPctOfCtx'), fmtPct(totals.totalFinal, ctxChars)));
+  out.push(boxBot());
   out.push('');
+
+  // 加载状态分布
   const counter = { full: 0, 'truncated-by-cap': 0, 'truncated-by-budget': 0, 'name-only': 0, 'no-description': 0 };
   for (const s of skills) counter[s.status] = (counter[s.status] || 0) + 1;
-  const marker = { full: '✅', 'truncated-by-cap': '✂ ', 'truncated-by-budget': '⚠ ', 'name-only': '❌', 'no-description': '· ' };
-  const label = { full: '完整加载', 'truncated-by-cap': '被 MaxDescChars 截断', 'truncated-by-budget': '被 BudgetFraction 压缩', 'name-only': '仅剩名称', 'no-description': '本就无描述' };
-  out.push('┌─ Skill 描述加载状态 ──────────────────────────────────┐');
+  const marker = { full: '✅', 'truncated-by-cap': '✂', 'truncated-by-budget': '⚠', 'name-only': '❌', 'no-description': '·' };
+  const label = {
+    full: t('statusFull'),
+    'truncated-by-cap': t('statusTruncCap'),
+    'truncated-by-budget': t('statusTruncBudget'),
+    'name-only': t('statusNameOnly'),
+    'no-description': t('statusNoDesc'),
+  };
+  out.push(boxTop(t('sectionStatus')));
   for (const k of Object.keys(counter)) {
     const n = counter[k];
     const pct = fmtPct(n, skills.length);
-    const barLen = Math.min(30, Math.floor(n * 30 / Math.max(1, skills.length)));
-    out.push(`│ ${marker[k]} ${label[k].padEnd(24)} ${String(n).padStart(4)} (${pct.padStart(7)}) ${'█'.repeat(barLen)}`);
+    const barMax = 10;
+    const barLen = Math.min(barMax, Math.floor(n * barMax / Math.max(1, skills.length)));
+    const bar = barLen ? ' ' + '='.repeat(barLen) : '';
+    const mk = padEndVisual(marker[k], 2);
+    // 单列布局: [mk] [label(34)] [count(4)] ([pct(7)]) [bar]
+    // 34+4+7+固定符号 = 稳定, 极端长 label 时把 bar 挤掉但主数据不截.
+    const line = `${mk} ${padEndVisual(label[k], 34)} ${padStartVisual(String(n), 4)} (${padStartVisual(pct, 7)})${bar}`;
+    out.push(boxRow(line));
   }
-  out.push('└────────────────────────────────────────────────────────┘');
+  out.push(boxBot());
   out.push('');
+
+  // 其他对象
   const agentChars = agents.reduce((s, a) => s + FRAME_OH + a.name.length + (a.description || '').length, 0);
   const mcpChars = mcp.reduce((s, m) => s + FRAME_OH + m.name.length + 40, 0);
-  out.push('┌─ 其他对象近似字符 (供参考) ────────────────────────────┐');
-  out.push(`│ Agents  : ${fmtTk(agentChars).padStart(28)}  (Agent 工具目录)     │`);
-  out.push(`│ MCP     : ${fmtTk(mcpChars).padStart(28)}  (只算 name+shim)      │`);
-  out.push(`│ Hooks   : ${fmtTk(0).padStart(28)}  (不进系统提示)        │`);
-  out.push('└────────────────────────────────────────────────────────┘');
+  out.push(boxTop(t('sectionOther')));
+  out.push(boxRow2col(`${t('otherAgents')} ${t('otherAgentsNote')}`, fmtTk(agentChars, t)));
+  out.push(boxRow2col(`${t('otherMcp')} ${t('otherMcpNote')}`, fmtTk(mcpChars, t)));
+  out.push(boxRow2col(`${t('otherHooks')} ${t('otherHooksNote')}`, fmtTk(0, t)));
+  out.push(boxBot());
   out.push('');
+
+  // Top 10 最长描述
   const long = skills.slice().sort((a, b) => b.origLen - a.origLen).slice(0, 10);
-  out.push('┌─ 描述最长 Top 10 ─────────────────────────────────────┐');
-  for (const s of long) out.push(`│ ${String(s.origLen).padStart(5)}ch  ${s.name.padEnd(38)} [${s.status}]`);
-  out.push('└────────────────────────────────────────────────────────┘');
+  out.push(boxTop(t('sectionTop')));
+  for (const s of long) {
+    const left = `${padStartVisual(String(s.origLen), 5)} ch  ${s.name}`;
+    out.push(boxRow2col(left, `[${s.status}]`));
+  }
+  out.push(boxBot());
   out.push('');
+
   const empty = skills.filter(s => s.origLen === 0).length;
-  if (empty) out.push(`⚠ 有 ${empty} 个 skill 无 description 字段,不占预算但也不给模型任何提示。`);
-  out.push('');
-  out.push('┌─ 建议 ─────────────────────────────────────────────────┐');
-  for (const l of suggest(rep)) out.push(l);
-  out.push('└────────────────────────────────────────────────────────┘');
+  if (empty) { out.push(t('emptyWarn', { n: empty })); out.push(''); }
+
+  // 建议
+  out.push(boxTop(t('sectionSuggest')));
+  for (const l of suggest(rep, t)) out.push(boxRow(l));
+  out.push(boxBot());
+
   if (args.verbose) {
     out.push('');
-    out.push('── 全部 skill 明细 ──');
+    out.push('── ' + t('sectionVerbose') + ' ──');
+    out.push(t('verboseHeader'));
     const sorted = skills.slice().sort((a, b) => (a.status.localeCompare(b.status)) || a.name.localeCompare(b.name));
-    for (const s of sorted) out.push(`  [${s.status.padStart(20)}] ${String(s.origLen).padStart(5)} → ${String(s.finalLen).padStart(5)}  ${s.name.padEnd(40)}  (${s.source})`);
+    for (const s of sorted) {
+      out.push(`  [${padStartVisual(s.status, 20)}] ${padStartVisual(String(s.origLen), 5)} → ${padStartVisual(String(s.finalLen), 5)}  ${padEndVisual(s.name, 40)}  (${s.source})`);
+    }
   }
   return out.join('\n');
 }
@@ -353,6 +442,7 @@ function renderJson(rep) {
   const counter = {};
   for (const s of rep.skills) counter[s.status] = (counter[s.status] || 0) + 1;
   return JSON.stringify({
+    language: rep.lang,
     ctx_tokens: rep.ctxTokens, ctx_chars: rep.ctxChars,
     skillListingBudgetFraction: rep.fraction, skillListingMaxDescChars: rep.maxDesc,
     budget_chars: rep.budget, enabled_plugins: rep.enabledPlugins,
@@ -363,10 +453,18 @@ function renderJson(rep) {
       skill_listing_final_chars: rep.totals.totalFinal,
     },
     status_distribution: counter,
-    skills: rep.skills.map(s => ({ name: s.name, source: s.source, orig_desc_len: s.origLen, final_desc_len: s.finalLen, load_status: s.status })),
+    skills: rep.skills.map(s => ({
+      name: s.name, source: s.source,
+      orig_desc_len: s.origLen, final_desc_len: s.finalLen,
+      load_status: s.status,
+    })),
   }, null, 2);
 }
 
 const args = parseArgs(process.argv);
-const rep = build(args);
-process.stdout.write((args.json ? renderJson(rep) : renderHuman(rep, args)) + '\n');
+// 先读一次 settings 只为拿 language,再让 build 复用. 保持向后兼容.
+const _preSettings = readJson(path.join(os.homedir(), '.claude', 'settings.json')) || {};
+const lang = detectLang({ cliLang: args.lang, settingsLanguage: _preSettings.language });
+const t = makeT(lang);
+const rep = build(args, lang);
+process.stdout.write((args.json ? renderJson(rep) : renderHuman(rep, args, t)) + '\n');
