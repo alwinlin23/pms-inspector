@@ -1,8 +1,10 @@
 # pms-inspector
 
+**English** · [简体中文](./README.zh-CN.md) · [繁體中文](./README.zh-TW.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Français](./README.fr.md) · [Deutsch](./README.de.md) · [Español](./README.es.md)
+
 **P/M/S = Plugin / MCP / Skill Inspector.**
 
-A zero-dependency Claude Code plugin that shows you exactly what your session pulls into the system prompt — every enabled plugin, MCP server, skill, agent, and hook — with byte and token math, plus concrete tuning suggestions.
+A zero-dependency Claude Code plugin that shows you exactly what your session pulls into the system prompt — every enabled plugin, MCP server, skill, agent, and hook — with byte and token math, plus concrete tuning suggestions you can apply in one click.
 
 ## Why
 
@@ -23,7 +25,7 @@ This is **not** a replacement for `/context`. `/context` shows *runtime* state (
 ## Install
 
 ```
-/plugin marketplace add https://github.com/<owner>/pms-inspector
+/plugin marketplace add https://github.com/alwinlin23/pms-inspector
 /plugin install pms-inspector@pms-inspector
 ```
 
@@ -41,7 +43,16 @@ Then, in a new Claude Code session:
 /pms-inspector --ctx 200000       # Override assumed context window
 /pms-inspector --verbose          # Per-skill breakdown
 /pms-inspector --lang zh-CN       # Force display language
+/pms-inspector --apply <plan-id>  # Apply a suggested tuning plan (see below)
 ```
+
+## Interactive tuning
+
+When the report finds the budget is either **overflowing** (some skills falling back to name-only) or clearly **oversized** (budget is more than double what's actually needed), Claude Code pops up a choice window listing the concrete tuning plans the script has computed. Picking one re-runs the script with `--apply <plan-id>`, which writes **only that one key** into `~/.claude/settings.json`.
+
+- An automatic `.bak.<ISO-timestamp>` backup is created before every write.
+- `ANTHROPIC_AUTH_TOKEN` and every other setting are left untouched.
+- Changes take effect the **next** time you launch Claude Code — the system prompt is assembled at startup, not per-turn.
 
 ## Multi-language UI
 
@@ -67,9 +78,9 @@ Language: en (override via --lang, e.g. --lang zh-CN)
 
 Set in: ~/.claude/settings.json
   context window: 200,000 tokens (~800,000 chars)
-  skillListingBudgetFraction = 0.15
+  skillListingBudgetFraction = 0.099
      ↳ fraction of ctx reserved for skill listing (CC setting; default 0.01)
-     ↳ budget 120,000 chars (15.00% of ctx)
+     ↳ budget 79,200 chars (9.90% of ctx)
   skillListingMaxDescChars = 1536
      ↳ per-skill description char cap (CC setting; default 1536)
   enabled plugins: claude-mem, ecc, andrej-karpathy-skills, pms-inspector
@@ -81,7 +92,7 @@ Set in: ~/.claude/settings.json
 ┌─ Skill listing char budget ──────────────────────────────────────┐
 │ Full (name+desc, uncut)             18,807 tokens / 75,228 chars │
 │ After per-cap (≤1536/skill)         18,807 tokens / 75,228 chars │
-│ Budget (0.15 × ctx)                30,000 tokens / 120,000 chars │
+│ Budget (0.099 × ctx)                19,800 tokens / 79,200 chars │
 │ Final injected into system prompt   18,807 tokens / 75,228 chars │
 │ Percent of ctx window                                      9.40% │
 └──────────────────────────────────────────────────────────────────┘
@@ -97,7 +108,7 @@ Set in: ~/.claude/settings.json
 
 ## Safety
 
-- Read-only. Never writes to `~/.claude/settings.json` or anything else.
+- The default invocation is read-only. `--apply <plan-id>` is the **only** code path that writes anywhere, and it only patches one target key in `~/.claude/settings.json` (`skillListingBudgetFraction`, `skillListingMaxDescChars`, or one entry in `enabledPlugins`). A `.bak.<ISO-timestamp>` snapshot is written before every change.
 - Does not read your `ANTHROPIC_AUTH_TOKEN` or any auth field — only the loadout-relevant keys.
 - Zero npm dependencies. Pure Node 18+ builtins (`fs`, `path`, `os`).
 - Cross-platform (macOS, Linux, Windows).
