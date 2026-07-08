@@ -1,0 +1,20 @@
+{
+  "name": "pms-inspector",
+  "version": "0.1.0",
+  "description": "Inspect Claude Code system-prompt overhead: how many skills/agents/MCP tools/hooks are loaded, how much of the context budget they consume, whether descriptions are truncated, and how to tune skillListingBudgetFraction / skillListingMaxDescChars.",
+  "author": {
+    "name": "pgg"
+  },
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "context",
+    "skills",
+    "budget",
+    "inspector",
+    "audit"
+  ],
+  "commands": [
+    "./commands/"
+  ]
+}

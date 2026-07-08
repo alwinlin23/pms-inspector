@@ -1,0 +1,30 @@
+{
+  "name": "pms-inspector",
+  "id": "pms-inspector",
+  "owner": {
+    "name": "pgg"
+  },
+  "metadata": {
+    "description": "Inspect Claude Code system-prompt overhead: skills, agents, MCP servers, hooks — with byte/token math and tuning suggestions.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "pms-inspector",
+      "source": "./",
+      "description": "Inspect what your Claude Code session actually loads: skills, agents, MCP servers, hooks — with byte/token math and tuning suggestions.",
+      "version": "0.1.0",
+      "author": {
+        "name": "pgg"
+      },
+      "keywords": [
+        "context",
+        "inspector",
+        "skills",
+        "budget",
+        "audit"
+      ],
+      "category": "workflow"
+    }
+  ]
+}
