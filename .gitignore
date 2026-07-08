@@ -6,3 +6,4 @@ node_modules/
 .idea/
 .vscode/
 .claude/settings.local.json
+CLAUDE.local.md
