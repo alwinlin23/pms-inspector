@@ -20,8 +20,13 @@ This is **not** the built-in `/context` command. `/context` shows runtime state 
 /pms-inspector --lang zh-CN       # Force display language (en / zh-CN / zh-TW / ja / ko / fr / de / es)
 ```
 
-Language is picked automatically in this order:
-`--lang` flag → `~/.claude/settings.json` `language` field (accepts local names like "简体中文") → `$LC_ALL` / `$LANG` / `$LANGUAGE` → fallback to `en`.
+When the report finds the budget is either overflowing or clearly oversized,
+Claude Code will pop up a choice window asking whether to apply one of the
+suggested tuning plans. Picking a plan writes only that one key in
+`~/.claude/settings.json` (with an automatic `.bak.<timestamp>` backup); the
+auth token and everything else are left untouched. Changes take effect the
+**next** time you launch Claude Code, since the system prompt is assembled at
+startup.
 
 ## Implementation
 
@@ -37,5 +42,31 @@ node "${PMS_ROOT%/}/scripts/inspect.js" $ARGUMENTS
 ## What to Do
 
 1. Execute the script above with any `$ARGUMENTS` the user supplied.
-2. Display the stdout directly — do not summarize or rewrite it; the report is already formatted.
-3. If the user asked a follow-up question ("what should I turn off?", "why is my ctx so full?"), answer it using the numbers from the report, not from memory.
+2. **Parse** the final `<pms-plans>{"verdict":"...","plans":[...]}</pms-plans>`
+   JSON line (last such block; ignore any inside code fences quoted earlier).
+   Then display the stdout to the user with the entire `<pms-plans>...`
+   trailing block **stripped out** — that block is metadata for you, not for
+   the user. Do not summarize or rewrite the rest of the report; it is
+   already formatted.
+3. Based on the parsed verdict:
+   - `verdict === "ok"` → done. Do not ask anything further, do not print any
+     extra message.
+   - `verdict === "overflow"` or `"oversized"` → **and if the user did NOT
+     already pass a flag other than `--lang`/`--ctx`/`--verbose`** → call the
+     `AskUserQuestion` tool directly, with **no lead-in text** (no "弹窗:",
+     no "Please choose:", no summary sentence — the report already told the
+     user what's up). One question: "Apply one of the suggested tuning
+     plans?". Options are the `plans[]` entries (use each plan's `label` as
+     the option label; each plan's `cost` field can go in the option
+     description) plus a "Keep current setting" option. After the user
+     picks, re-run the script with `--apply <id>` using the chosen plan's
+     `id`; then print the one-line apply result (that line is short and
+     user-facing, so print it verbatim).
+4. If the user asked a follow-up question ("what should I turn off?", "why
+   is my ctx so full?"), answer it using the numbers from the report, not
+   from memory.
+5. Never propose plans that were not present in the parsed `plans[]` — the
+   script already filtered infeasible ones.
+6. `--apply` writes `~/.claude/settings.json` (auto-backup `.bak.<ts>` is
+   created; auth token & other keys untouched). Changes take effect on the
+   **next** Claude Code session, not the current one — say so.

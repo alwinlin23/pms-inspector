@@ -24,16 +24,22 @@ const FRAME_OH = 24;
 const INNER_W = 66; // 表格内容区宽度 (不含左右边框). 66 覆盖大多数中英混排;
 
 function parseArgs(argv) {
-  const args = { json: false, ctx: DEFAULT_CTX_TOKENS, verbose: false, lang: null };
+  const args = { json: false, ctx: DEFAULT_CTX_TOKENS, verbose: false, lang: null, apply: null };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--json') args.json = true;
     else if (a === '--verbose' || a === '-v') args.verbose = true;
     else if (a === '--ctx') args.ctx = parseInt(argv[++i], 10) || DEFAULT_CTX_TOKENS;
     else if (a === '--lang') args.lang = argv[++i];
+    else if (a === '--apply') args.apply = argv[++i];
     else if (a === '--help' || a === '-h') {
-      console.log('Usage: node inspect.js [--json] [--ctx <tokens>] [--verbose] [--lang <code>]');
+      console.log('Usage: node inspect.js [--json] [--ctx <tokens>] [--verbose] [--lang <code>] [--apply <plan-id>]');
       console.log('Supported languages: ' + SUPPORTED_LANGS.join(', '));
+      console.log('Apply plan IDs (auto-detected; see <pms-plans> block in normal output):');
+      console.log('  A                 raise skillListingBudgetFraction (fits everything)');
+      console.log('  B                 lower skillListingMaxDescChars');
+      console.log('  C=<plugin@vendor> disable that enabled plugin');
+      console.log('  D                 lower skillListingBudgetFraction (trim slack)');
       process.exit(0);
     }
   }
@@ -238,7 +244,7 @@ const fmtInt = n => n.toLocaleString('en-US');
 const fmtPct = (n, d) => d > 0 ? (n * 100 / d).toFixed(2) + '%' : 'n/a';
 function fmtTk(chars, t) { return `${fmtInt(Math.floor(chars / CHARS_PER_TOKEN))} ${t('tokens')} / ${fmtInt(chars)} ${t('chars')}`; }
 
-function build(args, lang) {
+function build(args, lang, t) {
   const home = os.homedir();
   const settings = readJson(path.join(home, '.claude', 'settings.json'));
   if (!settings) { process.stderr.write('[fatal] cannot read ~/.claude/settings.json\n'); process.exit(1); }
@@ -253,12 +259,18 @@ function build(args, lang) {
   const mcp = collectMcp(settings, roots);
   const hooks = collectHooks(settings, roots);
   const budgeted = applyBudget(rawSkills, maxDesc, budget);
-  return {
+  const rep = {
     lang, ctxTokens, ctxChars, fraction, maxDesc, budget,
     enabledPlugins: roots.map(r => r.label),
     pluginRoots: roots, skills: budgeted.entries, agents, mcp, hooks, totals: budgeted,
     settingsLanguage: settings.language || null,
   };
+  // computePlans 需要 rep 已构造完毕(读 totals/fraction/skills), 挂 verdict+plans 回 rep.
+  const planInfo = computePlans(rep, t);
+  rep.verdict = planInfo.verdict;
+  rep.verdictMessage = planInfo.message;
+  rep.plans = planInfo.plans;
+  return rep;
 }
 
 /* ─── 表格排版工具 ────────────────────────────────────────────────
@@ -296,37 +308,138 @@ function boxRow2col(left, right) {
 }
 
 function suggest(rep, t) {
-  const { totals, budget, ctxChars, fraction, skills } = rep;
-  const need = totals.totalAfterCap;
   const lines = [];
-  if (need <= budget) {
-    const headroom = (budget - need) * 100 / Math.max(1, budget);
-    lines.push(t('suggestOk'));
-    lines.push(t('suggestHeadroom', { pct: headroom.toFixed(1) }));
-    if (fraction > 0.05 && headroom > 60) {
-      const newFrac = +(need / ctxChars * 1.2).toFixed(3);
-      lines.push(t('suggestFractionLower', { v: newFrac }));
-    }
-  } else {
-    const needFrac = Math.min(1, +(need / ctxChars + 0.005).toFixed(3));
-    lines.push(t('suggestOverflow', { b: fmtInt(budget), n: fmtInt(need) }));
-    lines.push(t('suggestPlanA', { v: needFrac }));
-    lines.push(t('suggestPlanACost', { t: fmtTk(need - budget, t) }));
-    const n = Math.max(1, skills.length);
-    const totalNameOh = skills.reduce((s, x) => s + x.name.length + FRAME_OH, 0);
-    const avgDescBudget = Math.max(0, (budget - totalNameOh) / n);
-    if (avgDescBudget >= 50) {
-      lines.push(t('suggestPlanB', { v: Math.floor(avgDescBudget) }));
-      lines.push(t('suggestPlanBEffect', { frac: fraction }));
-    }
-    const bySrc = {};
-    for (const s of skills) bySrc[s.source] = (bySrc[s.source] || 0) + 1;
-    const top = Object.entries(bySrc).sort((a, b) => b[1] - a[1])[0];
-    if (top && top[1] > n * 0.5) lines.push(t('suggestPlanC', { p: top[0], n: top[1] }));
+  // 三种 verdict 都先渲染 verdictMessage(总结句), 再追加 plans.
+  for (const seg of rep.verdictMessage.split('\n')) lines.push(seg);
+  for (const p of rep.plans) {
+    for (const seg of p.text.split('\n')) lines.push(seg);
   }
   lines.push('');
   lines.push(t('suggestCommon'));
   return lines;
+}
+
+/**
+ * computePlans — 产生结构化方案列表(verdict + plan[]),供 human/json/apply 三条渲染路径共享。
+ * verdict:
+ *   'overflow' — 预算装不下(rep.totals.totalAfterCap > budget)
+ *   'oversized' — 预算够用但余量 >60%(fraction 明显偏大)
+ *   'ok' — 刚好或轻微余量,不弹 UI
+ * plan.id 与 --apply <id> 一一对应.
+ */
+function computePlans(rep, t) {
+  const { totals, budget, ctxChars, fraction, skills } = rep;
+  const need = totals.totalAfterCap;
+  const plans = [];
+  let verdict, message;
+  if (need > budget) {
+    verdict = 'overflow';
+    const headroom = 0;
+    message = t('suggestOverflow', { b: fmtInt(budget), n: fmtInt(need) });
+    // Plan A: raise fraction
+    const needFrac = Math.min(1, +(need / ctxChars + 0.005).toFixed(3));
+    plans.push({
+      id: 'A', kind: 'raise-fraction',
+      label: t('suggestPlanA', { v: needFrac }),
+      cost: t('suggestPlanACost', { t: fmtTk(need - budget, t) }),
+      text: t('suggestPlanA', { v: needFrac }) + '\n' + t('suggestPlanACost', { t: fmtTk(need - budget, t) }),
+      setting: 'skillListingBudgetFraction',
+      newValue: needFrac,
+      oldValue: fraction,
+    });
+    // Plan B: lower maxDesc (only feasible if per-skill budget ≥50 chars)
+    const n = Math.max(1, skills.length);
+    const totalNameOh = skills.reduce((s, x) => s + x.name.length + FRAME_OH, 0);
+    const avgDescBudget = Math.max(0, (budget - totalNameOh) / n);
+    if (avgDescBudget >= 50) {
+      const newMax = Math.floor(avgDescBudget);
+      plans.push({
+        id: 'B', kind: 'lower-max-desc',
+        label: t('suggestPlanB', { v: newMax }),
+        cost: t('suggestPlanBEffect', { frac: fraction }),
+        text: t('suggestPlanB', { v: newMax }) + '\n' + t('suggestPlanBEffect', { frac: fraction }),
+        setting: 'skillListingMaxDescChars',
+        newValue: newMax,
+        oldValue: rep.maxDesc,
+      });
+    }
+    // Plan C: disable heaviest plugin (only if it dominates >50% of skills)
+    const bySrc = {};
+    for (const s of skills) bySrc[s.source] = (bySrc[s.source] || 0) + 1;
+    const top = Object.entries(bySrc).sort((a, b) => b[1] - a[1])[0];
+    if (top && top[1] > n * 0.5) {
+      plans.push({
+        id: 'C=' + top[0], kind: 'disable-plugin',
+        label: t('suggestPlanC', { p: top[0], n: top[1] }),
+        cost: '',
+        text: t('suggestPlanC', { p: top[0], n: top[1] }),
+        setting: 'enabledPlugins',
+        pluginSpec: top[0],
+        newValue: false,
+        skillsRemoved: top[1],
+      });
+    }
+  } else {
+    const headroom = (budget - need) * 100 / Math.max(1, budget);
+    if (fraction > 0.02 && headroom > 60) {
+      verdict = 'oversized';
+      message = t('suggestOk') + '\n' + t('suggestHeadroom', { pct: headroom.toFixed(1) });
+      // 目标: 让实际用量占预算约 83%(need*1.2/ctx). 至少保留一点缓冲.
+      const newFrac = Math.max(0.01, +(need / ctxChars * 1.2).toFixed(3));
+      if (newFrac < fraction) {
+        plans.push({
+          id: 'D', kind: 'lower-fraction',
+          label: t('suggestFractionLower', { v: newFrac }),
+          cost: '',
+          text: t('suggestFractionLower', { v: newFrac }),
+          setting: 'skillListingBudgetFraction',
+          newValue: newFrac,
+          oldValue: fraction,
+        });
+      } else {
+        // fraction 已到最小合理值,无可下调余地,回到 ok.
+        verdict = 'ok';
+        message = t('suggestOk') + '\n' + t('suggestHeadroom', { pct: headroom.toFixed(1) });
+      }
+    } else {
+      verdict = 'ok';
+      message = t('suggestOk') + '\n' + t('suggestHeadroom', { pct: headroom.toFixed(1) });
+    }
+  }
+  return { verdict, message, plans };
+}
+
+/**
+ * writeSettingsPatch — 只 patch 目标 key, 保留 auth 与其他 key 不动.
+ * 写盘前 cp 一份 settings.json.bak.<ts>. 幂等失败: 直接抛,由 main 捕获打印.
+ */
+function writeSettingsPatch(applyId, rep) {
+  const home = os.homedir();
+  const settingsPath = path.join(home, '.claude', 'settings.json');
+  const raw = fs.readFileSync(settingsPath, 'utf8');
+  const cfg = JSON.parse(raw);
+  const plan = rep.plans.find(p => p.id === applyId || p.kind === applyId);
+  if (!plan) throw new Error(`no plan matches id "${applyId}". Available: ${rep.plans.map(p => p.id).join(', ') || '(none — verdict=' + rep.verdict + ')'}`);
+  // 备份
+  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+  const bakPath = `${settingsPath}.bak.${ts}`;
+  fs.copyFileSync(settingsPath, bakPath);
+  // 打补丁
+  const change = { before: null, after: null };
+  if (plan.setting === 'skillListingBudgetFraction' || plan.setting === 'skillListingMaxDescChars') {
+    change.before = cfg[plan.setting];
+    cfg[plan.setting] = plan.newValue;
+    change.after = plan.newValue;
+  } else if (plan.setting === 'enabledPlugins') {
+    cfg.enabledPlugins = cfg.enabledPlugins || {};
+    change.before = cfg.enabledPlugins[plan.pluginSpec];
+    cfg.enabledPlugins[plan.pluginSpec] = plan.newValue;
+    change.after = plan.newValue;
+  } else {
+    throw new Error(`plan setting "${plan.setting}" is not writable`);
+  }
+  fs.writeFileSync(settingsPath, JSON.stringify(cfg, null, 2) + '\n', 'utf8');
+  return { plan, bakPath, settingsPath, change };
 }
 
 function renderHuman(rep, args, t) {
@@ -435,6 +548,17 @@ function renderHuman(rep, args, t) {
       out.push(`  [${padStartVisual(s.status, 20)}] ${padStartVisual(String(s.origLen), 5)} → ${padStartVisual(String(s.finalLen), 5)}  ${padEndVisual(s.name, 40)}  (${s.source})`);
     }
   }
+
+  // 结构化 plan 块 — 供 slash command 层解析后决定要不要弹 AskUserQuestion.
+  // verdict != 'ok' 时含 plans[]. 若解析失败(旧版 command)则视为无 plan, 只看文字.
+  out.push('');
+  out.push('<pms-plans>');
+  out.push(JSON.stringify({ verdict: rep.verdict, plans: rep.plans.map(p => ({
+    id: p.id, kind: p.kind, setting: p.setting, pluginSpec: p.pluginSpec,
+    newValue: p.newValue, oldValue: p.oldValue,
+    label: p.label, cost: p.cost,
+  })) }));
+  out.push('</pms-plans>');
   return out.join('\n');
 }
 
@@ -446,6 +570,12 @@ function renderJson(rep) {
     ctx_tokens: rep.ctxTokens, ctx_chars: rep.ctxChars,
     skillListingBudgetFraction: rep.fraction, skillListingMaxDescChars: rep.maxDesc,
     budget_chars: rep.budget, enabled_plugins: rep.enabledPlugins,
+    verdict: rep.verdict,
+    plans: rep.plans.map(p => ({
+      id: p.id, kind: p.kind, setting: p.setting, pluginSpec: p.pluginSpec,
+      new_value: p.newValue, old_value: p.oldValue,
+      label: p.label, cost: p.cost,
+    })),
     totals: {
       skills: rep.skills.length, agents: rep.agents.length, mcp: rep.mcp.length, hooks: rep.hooks.length,
       skill_listing_full_chars: rep.totals.totalFull,
@@ -466,5 +596,25 @@ const args = parseArgs(process.argv);
 const _preSettings = readJson(path.join(os.homedir(), '.claude', 'settings.json')) || {};
 const lang = detectLang({ cliLang: args.lang, settingsLanguage: _preSettings.language });
 const t = makeT(lang);
-const rep = build(args, lang);
+const rep = build(args, lang, t);
+
+if (args.apply) {
+  try {
+    const { plan, bakPath, change } = writeSettingsPatch(args.apply, rep);
+    const result = {
+      applied: true, plan_id: plan.id, kind: plan.kind, setting: plan.setting,
+      plugin_spec: plan.pluginSpec, before: change.before, after: change.after,
+      backup: bakPath,
+      hint: 'Change takes effect on the NEXT Claude Code session (system prompt is built at launch).',
+    };
+    process.stdout.write(args.json
+      ? JSON.stringify(result, null, 2) + '\n'
+      : `✅ applied plan ${plan.id}\n   ${plan.setting}${plan.pluginSpec ? '[' + plan.pluginSpec + ']' : ''}: ${JSON.stringify(change.before)} → ${JSON.stringify(change.after)}\n   backup: ${bakPath}\n   ${result.hint}\n`);
+    process.exit(0);
+  } catch (e) {
+    process.stderr.write(`[fatal] --apply failed: ${e.message}\n`);
+    process.exit(2);
+  }
+}
+
 process.stdout.write((args.json ? renderJson(rep) : renderHuman(rep, args, t)) + '\n');
