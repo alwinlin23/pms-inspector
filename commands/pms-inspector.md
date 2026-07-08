@@ -24,8 +24,11 @@ This is **not** the built-in `/context` command. `/context` shows runtime state 
 Run the inspector script and show its stdout verbatim to the user:
 
 ```bash
-node "$CLAUDE_PLUGIN_ROOT/scripts/inspect.js" $ARGUMENTS
+PMS_ROOT="${CLAUDE_PLUGIN_ROOT:-$(ls -td "$HOME/.claude/plugins/cache/pms-inspector/pms-inspector"/*/ 2>/dev/null | head -1)}"
+node "${PMS_ROOT%/}/scripts/inspect.js" $ARGUMENTS
 ```
+
+`$CLAUDE_PLUGIN_ROOT` is set by Claude Code at slash-command time, but is not always propagated into the Bash tool subprocess. The fallback picks the latest installed version under `~/.claude/plugins/cache/pms-inspector/pms-inspector/`.
 
 ## What to Do
 

@@ -17,13 +17,14 @@ commands/pms-inspector.md        Slash-command definition (frontmatter + Bash bo
 scripts/inspect.js               Single-file audit script — the entire runtime.
 ```
 
-The command markdown intentionally does nothing except shell out to the script:
+The command markdown does one thing — shell out to the script, with a fallback resolver for `$CLAUDE_PLUGIN_ROOT`:
 
 ```bash
-node "$CLAUDE_PLUGIN_ROOT/scripts/inspect.js" $ARGUMENTS
+PMS_ROOT="${CLAUDE_PLUGIN_ROOT:-$(ls -td "$HOME/.claude/plugins/cache/pms-inspector/pms-inspector"/*/ 2>/dev/null | head -1)}"
+node "${PMS_ROOT%/}/scripts/inspect.js" $ARGUMENTS
 ```
 
-`$CLAUDE_PLUGIN_ROOT` is set by Claude Code itself at command-invocation time. Do **not** replicate the elaborate `ECC_ROOT` fallback resolver seen in `ecc/commands/skill-health.md` — it is redundant here.
+**Why the fallback is required (verified 2026-07-08)**: Claude Code sets `$CLAUDE_PLUGIN_ROOT` for slash-command *frontmatter substitution*, but it does not always propagate into the Bash tool's subprocess environment — `env | grep CLAUDE_PLUGIN_ROOT` inside the tool returns nothing, and `node "$CLAUDE_PLUGIN_ROOT/scripts/inspect.js"` collapses to `/scripts/inspect.js` (module-not-found). The fallback walks the CC-mandated cache path `~/.claude/plugins/cache/<plugin-name>/<plugin-name>/<version>/`. This is a lighter version of ecc's `resolve-ecc-root` node oneliner and serves the same purpose.
 
 ## The one script
 
