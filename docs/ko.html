@@ -20,15 +20,24 @@
 <body>
 <div class="wrap">
 
-<nav class="lang-bar" aria-label="언어">
-  <a href="./index.html" hreflang="en">English</a> ·
-  <a href="./zh-CN.html" hreflang="zh-CN">简体中文</a> ·
-  <a href="./zh-TW.html" hreflang="zh-TW">繁體中文</a> ·
-  <a href="./ja.html" hreflang="ja">日本語</a> ·
-  <strong>한국어</strong> ·
-  <a href="./fr.html" hreflang="fr">Français</a> ·
-  <a href="./de.html" hreflang="de">Deutsch</a> ·
-  <a href="./es.html" hreflang="es">Español</a>
+<nav class="lang-switcher" aria-label="언어">
+  <details>
+    <summary aria-label="언어">
+      <span class="flag">🇰🇷</span>
+      <span class="label">한국어</span>
+      <span class="caret">▼</span>
+    </summary>
+    <ul class="menu">
+      <li><a href="./index.html" hreflang="en"><span class="flag">🇺🇸</span> English</a></li>
+      <li><a href="./zh-CN.html" hreflang="zh-CN"><span class="flag">🇨🇳</span> 简体中文</a></li>
+      <li><a href="./zh-TW.html" hreflang="zh-TW"><span class="flag">🇹🇼</span> 繁體中文</a></li>
+      <li><a href="./ja.html" hreflang="ja"><span class="flag">🇯🇵</span> 日本語</a></li>
+      <li><span class="current"><span class="flag">🇰🇷</span> 한국어</span></li>
+      <li><a href="./fr.html" hreflang="fr"><span class="flag">🇫🇷</span> Français</a></li>
+      <li><a href="./de.html" hreflang="de"><span class="flag">🇩🇪</span> Deutsch</a></li>
+      <li><a href="./es.html" hreflang="es"><span class="flag">🇪🇸</span> Español</a></li>
+    </ul>
+  </details>
 </nav>
 
 <header class="hero">
