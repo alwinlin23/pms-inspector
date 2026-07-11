@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pms-inspector —— 看清你的 Claude Code session 到底加载了什么</title>
+<meta name="description" content="零依赖 Claude Code 插件,审计系统提示里的插件 / MCP / skill / agent / hook,附带字节/token 计算和一键调优。">
+<link rel="canonical" href="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
+<link rel="alternate" hreflang="en" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="alternate" hreflang="zh-CN" href="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
+<link rel="alternate" hreflang="x-default" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="lang-bar" aria-label="语言">
+  <a href="./index.html" hreflang="en">English</a> ·
+  <strong>简体中文</strong>
+</nav>
+
+<header class="hero">
+  <h1>pms-inspector</h1>
+  <p class="tag"><strong>P/M/S</strong> = Plugin / MCP / Skill Inspector(插件 / MCP / Skill 检查器)。</p>
+  <p class="lede">
+    一个零依赖的 Claude Code 插件,精确告诉你当前 session 往系统提示里塞了些什么
+    —— 每个已启用的插件、MCP 服务器、skill、agent、hook —— 附带字节/token 计算,以及可以一键应用的调优建议。
+  </p>
+  <div class="cta-row">
+    <a class="btn primary" href="https://github.com/alwinlin23/pms-inspector">在 GitHub 查看 →</a>
+    <a class="btn" href="#install">安装</a>
+    <a class="btn" href="#example">看示例输出</a>
+  </div>
+</header>
+
+<h2 id="why">为什么需要它</h2>
+<p>
+  Claude Code 会自动把每个已启用插件的每个 skill 都载入系统提示。当你配置比较满(例如
+  <code>ecc</code> + <code>claude-mem</code>,磁盘上 ~300 个 skill),默认的
+  <code>skillListingBudgetFraction: 0.01</code> 会悄悄把 skill 描述压缩到<em>只剩名字</em>,而且你根本看不出发生了什么。模型选错了 skill,你也不知道为什么。
+</p>
+<p><code>/pms-inspector</code> 会告诉你:</p>
+<ul>
+  <li>有多少插件 / MCP 服务器 / skill / agent / hook 处于启用状态。</li>
+  <li>每一类占了多少字节和 token。</li>
+  <li>每个 skill 的加载状态,分为四档(见下)。</li>
+  <li>skill 清单占了上下文窗口的百分之多少。</li>
+  <li>该拧哪个旋钮解决问题 —— 而且允许你一键应用。</li>
+</ul>
+<blockquote>
+  这<strong>不是</strong> <code>/context</code> 的替代品。<code>/context</code> 展示的是<em>运行时</em>状态(当前对话里加载了什么),而
+  <code>/pms-inspector</code> 通过读取磁盘上的配置,预测<em>下一个</em> session 会加载什么。
+</blockquote>
+
+<h2 id="states">四种加载状态</h2>
+<p>磁盘上的每个 skill 都会落到这四档之一:</p>
+<div class="states">
+  <div class="state full">
+    <span class="badge">full</span>
+    <p>描述完整加载。模型可以基于描述选中这个 skill。</p>
+  </div>
+  <div class="state trunc">
+    <span class="badge">desc-truncated</span>
+    <p>被 <code>skillListingMaxDescChars</code> 截断。仍可读,但尾巴被切掉。</p>
+  </div>
+  <div class="state comp">
+    <span class="badge">budget-compressed</span>
+    <p>被全局的 <code>skillListingBudgetFraction</code> 压缩。描述被砍短以塞进预算。</p>
+  </div>
+  <div class="state name">
+    <span class="badge">name-only</span>
+    <p>描述被完全丢弃。模型只能看到一个 slug,例如 <code>opensource-forker</code> —— 往往不够用来判断该不该选。</p>
+  </div>
+</div>
+
+<h2 id="install">安装</h2>
+<p>添加 marketplace、安装插件:</p>
+<pre><code>/plugin marketplace add https://github.com/alwinlin23/pms-inspector
+/plugin install pms-inspector@pms-inspector</code></pre>
+
+<p>然后开一个新的 Claude Code session:</p>
+<pre><code>/pms-inspector</code></pre>
+
+<h2 id="usage">用法</h2>
+<pre><code>/pms-inspector                    # 人类可读摘要(自动检测语言)
+/pms-inspector --json             # 机器可解析 JSON
+/pms-inspector --ctx 200000       # 覆盖假定的上下文窗口
+/pms-inspector --verbose          # 每个 skill 的详细分类
+/pms-inspector --lang zh-CN       # 强制显示语言
+/pms-inspector --apply &lt;plan-id&gt;  # 应用某个建议的调优方案</code></pre>
+
+<h2 id="tuning">交互式调优</h2>
+<p>
+  当报告发现预算<strong>溢出</strong>(有 skill 掉到 name-only)或者明显<strong>过大</strong>(预算比实际用得上的还多一倍以上)时,Claude Code 会弹一个选择窗,列出脚本计算好的具体调优方案。选中一个之后会用
+  <code>--apply &lt;plan-id&gt;</code> 重跑脚本,只会把<strong>那一个键</strong>写进
+  <code>~/.claude/settings.json</code>。
+</p>
+<ul>
+  <li>每次写入前会自动生成一份 <code>.bak.&lt;ISO 时间戳&gt;</code> 备份。</li>
+  <li><code>ANTHROPIC_AUTH_TOKEN</code> 以及其他所有配置都不会被动。</li>
+  <li>变更在<strong>下一次</strong>启动 Claude Code 时生效 —— 系统提示是启动时组装的,不是每个回合都重算。</li>
+</ul>
+
+<h2 id="example">示例输出</h2>
+<p>在一台有 ~300 个 skill、预算已调好的机器上跑 <code>/pms-inspector</code>:</p>
+<pre><code>═══ Claude Code 上下文加载检查器 ═══
+显示语言: zh-CN (可通过 --lang 覆盖,例如 --lang en)
+
+配置位置: ~/.claude/settings.json
+  上下文窗口: 200,000 tokens (~800,000 字符)
+  skillListingBudgetFraction = 0.099
+     ↳ skill 清单占 ctx 的比例(CC 配置;默认 0.01)
+     ↳ 预算 79,200 字符 (占 ctx 的 9.90%)
+  skillListingMaxDescChars = 1536
+     ↳ 单个 skill 描述字符上限(CC 配置;默认 1536)
+  已启用插件: claude-mem, ecc, andrej-karpathy-skills, pms-inspector
+
+┌─ 对象总览 ───────────────────────────────────────────────────────┐
+│ Skills :  295   Agents :   67   MCP :   2   Hooks :    2         │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ Skill 清单字符预算 ─────────────────────────────────────────────┐
+│ 全量 (name+desc, 未裁剪)             18,807 tokens / 75,228 字符 │
+│ per-cap 后 (≤1536/skill)             18,807 tokens / 75,228 字符 │
+│ 预算 (0.099 × ctx)                   19,800 tokens / 79,200 字符 │
+│ 最终注入系统提示                     18,807 tokens / 75,228 字符 │
+│ 占 ctx 窗口                                                9.40% │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ Skill 描述加载状态 ─────────────────────────────────────────────┐
+│ ✅ 完整加载                            295 (100.00%) ==========  │
+│ ✂  被 MaxDescChars 截断                  0 (  0.00%)             │
+│ ⚠  被 BudgetFraction 压缩                0 (  0.00%)             │
+│ ❌ 仅剩名称                              0 (  0.00%)             │
+│ ·  本就无描述                            0 (  0.00%)             │
+└──────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2 id="i18n">开箱即用的 8 种语言</h2>
+<p>
+  <code>pms-inspector</code> 支持
+  <strong>en、zh-CN、zh-TW、ja、ko、fr、de、es</strong>。显示语言按优先级自动检测:
+</p>
+<ol>
+  <li><code>--lang &lt;code&gt;</code> 命令行参数</li>
+  <li><code>~/.claude/settings.json</code> 里的 <code>language</code> 字段(也接受本地名称,如 <code>"简体中文"</code>、<code>"日本語"</code>、<code>"français"</code>)</li>
+  <li>环境变量 <code>$LC_ALL</code> / <code>$LANG</code> / <code>$LANGUAGE</code></li>
+  <li>回退到 <code>en</code></li>
+</ol>
+
+<h2 id="safety">安全性</h2>
+<ul>
+  <li>默认调用只读。<code>--apply &lt;plan-id&gt;</code> 是<strong>唯一</strong>会写文件的代码路径,并且只会 patch <code>~/.claude/settings.json</code> 里的一个目标键(<code>skillListingBudgetFraction</code>、<code>skillListingMaxDescChars</code>,或者 <code>enabledPlugins</code> 里的一项)。每次修改前都会生成一份 <code>.bak.&lt;ISO 时间戳&gt;</code> 快照。</li>
+  <li>不读取 <code>ANTHROPIC_AUTH_TOKEN</code> 或任何鉴权字段 —— 只读跟加载相关的键。</li>
+  <li>零 npm 依赖。纯 Node 18+ 内置模块(<code>fs</code>、<code>path</code>、<code>os</code>)。</li>
+  <li>跨平台(macOS、Linux、Windows)。</li>
+</ul>
+
+<footer>
+  <p>
+    MIT 许可 · <a href="https://github.com/alwinlin23/pms-inspector">github.com/alwinlin23/pms-inspector</a>
+  </p>
+</footer>
+
+</div>
+</body>
+</html>

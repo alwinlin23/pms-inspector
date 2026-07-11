@@ -2,6 +2,8 @@
 
 **English** · [简体中文](./docs/README.zh-CN.md) · [繁體中文](./docs/README.zh-TW.md) · [日本語](./docs/README.ja.md) · [한국어](./docs/README.ko.md) · [Français](./docs/README.fr.md) · [Deutsch](./docs/README.de.md) · [Español](./docs/README.es.md)
 
+📄 **Website:** [alwinlin23.github.io/pms-inspector](https://alwinlin23.github.io/pms-inspector/)
+
 **P/M/S = Plugin / MCP / Skill Inspector.**
 
 A zero-dependency Claude Code plugin that shows you exactly what your session pulls into the system prompt — every enabled plugin, MCP server, skill, agent, and hook — with byte and token math, plus concrete tuning suggestions you can apply in one click.
