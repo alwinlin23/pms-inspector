@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pms-inspector —— 看清你的 Claude Code session 到底載入了什麼</title>
+<meta name="description" content="零相依 Claude Code 外掛,稽核系統提示裡的外掛 / MCP / skill / agent / hook,附帶位元組/token 計算與一鍵調校。">
+<link rel="canonical" href="https://alwinlin23.github.io/pms-inspector/zh-TW.html">
+<link rel="alternate" hreflang="en" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="alternate" hreflang="zh-CN" href="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
+<link rel="alternate" hreflang="zh-TW" href="https://alwinlin23.github.io/pms-inspector/zh-TW.html">
+<link rel="alternate" hreflang="ja" href="https://alwinlin23.github.io/pms-inspector/ja.html">
+<link rel="alternate" hreflang="ko" href="https://alwinlin23.github.io/pms-inspector/ko.html">
+<link rel="alternate" hreflang="fr" href="https://alwinlin23.github.io/pms-inspector/fr.html">
+<link rel="alternate" hreflang="de" href="https://alwinlin23.github.io/pms-inspector/de.html">
+<link rel="alternate" hreflang="es" href="https://alwinlin23.github.io/pms-inspector/es.html">
+<link rel="alternate" hreflang="x-default" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="lang-bar" aria-label="語言">
+  <a href="./index.html" hreflang="en">English</a> ·
+  <a href="./zh-CN.html" hreflang="zh-CN">简体中文</a> ·
+  <strong>繁體中文</strong> ·
+  <a href="./ja.html" hreflang="ja">日本語</a> ·
+  <a href="./ko.html" hreflang="ko">한국어</a> ·
+  <a href="./fr.html" hreflang="fr">Français</a> ·
+  <a href="./de.html" hreflang="de">Deutsch</a> ·
+  <a href="./es.html" hreflang="es">Español</a>
+</nav>
+
+<header class="hero">
+  <h1>pms-inspector</h1>
+  <p class="tag"><strong>P/M/S</strong> = Plugin / MCP / Skill Inspector(外掛 / MCP / Skill 檢查器)。</p>
+  <p class="lede">
+    一個零相依的 Claude Code 外掛,精確告訴你目前 session 往系統提示裡塞了些什麼
+    —— 每個已啟用的外掛、MCP 伺服器、skill、agent、hook —— 附帶位元組/token 計算,以及可以一鍵套用的調校建議。
+  </p>
+  <div class="cta-row">
+    <a class="btn primary" href="https://github.com/alwinlin23/pms-inspector">在 GitHub 檢視 →</a>
+    <a class="btn" href="#install">安裝</a>
+    <a class="btn" href="#example">看範例輸出</a>
+  </div>
+</header>
+
+<h2 id="why">為什麼需要它</h2>
+<p>
+  Claude Code 會自動把每個已啟用外掛的每個 skill 都載入系統提示。當你設定比較滿(例如
+  <code>ecc</code> + <code>claude-mem</code>,磁碟上 ~300 個 skill),預設的
+  <code>skillListingBudgetFraction: 0.01</code> 會悄悄把 skill 描述壓縮到<em>只剩名字</em>,而且你根本看不出發生了什麼。模型選錯了 skill,你也不知道為什麼。
+</p>
+<p><code>/pms-inspector</code> 會告訴你:</p>
+<ul>
+  <li>有多少外掛 / MCP 伺服器 / skill / agent / hook 處於啟用狀態。</li>
+  <li>每一類佔了多少位元組和 token。</li>
+  <li>每個 skill 的載入狀態,分為四檔(見下)。</li>
+  <li>skill 清單佔了上下文視窗的百分之多少。</li>
+  <li>該轉哪個旋鈕解決問題 —— 而且允許你一鍵套用。</li>
+</ul>
+<blockquote>
+  這<strong>不是</strong> <code>/context</code> 的替代品。<code>/context</code> 展示的是<em>執行時</em>狀態(目前對話裡載入了什麼),而
+  <code>/pms-inspector</code> 透過讀取磁碟上的設定,預測<em>下一個</em> session 會載入什麼。
+</blockquote>
+
+<h2 id="states">四種載入狀態</h2>
+<p>磁碟上的每個 skill 都會落到這四檔之一:</p>
+<div class="states">
+  <div class="state full">
+    <span class="badge">full</span>
+    <p>描述完整載入。模型可以根據描述選中這個 skill。</p>
+  </div>
+  <div class="state trunc">
+    <span class="badge">desc-truncated</span>
+    <p>被 <code>skillListingMaxDescChars</code> 截斷。仍可讀,但尾巴被切掉。</p>
+  </div>
+  <div class="state comp">
+    <span class="badge">budget-compressed</span>
+    <p>被全域的 <code>skillListingBudgetFraction</code> 壓縮。描述被砍短以塞進預算。</p>
+  </div>
+  <div class="state name">
+    <span class="badge">name-only</span>
+    <p>描述被完全丟棄。模型只能看到一個 slug,例如 <code>opensource-forker</code> —— 往往不夠用來判斷該不該選。</p>
+  </div>
+</div>
+
+<h2 id="install">安裝</h2>
+<p>新增 marketplace、安裝外掛:</p>
+<pre><code>/plugin marketplace add https://github.com/alwinlin23/pms-inspector
+/plugin install pms-inspector@pms-inspector</code></pre>
+
+<p>然後開一個新的 Claude Code session:</p>
+<pre><code>/pms-inspector</code></pre>
+
+<h2 id="usage">用法</h2>
+<pre><code>/pms-inspector                    # 人類可讀摘要(自動偵測語言)
+/pms-inspector --json             # 機器可解析 JSON
+/pms-inspector --ctx 200000       # 覆寫假定的上下文視窗
+/pms-inspector --verbose          # 每個 skill 的詳細分類
+/pms-inspector --lang zh-TW       # 強制顯示語言
+/pms-inspector --apply &lt;plan-id&gt;  # 套用某個建議的調校方案</code></pre>
+
+<h2 id="tuning">互動式調校</h2>
+<p>
+  當報告發現預算<strong>溢位</strong>(有 skill 掉到 name-only)或者明顯<strong>過大</strong>(預算比實際用得上的還多一倍以上)時,Claude Code 會彈一個選擇視窗,列出腳本計算好的具體調校方案。選中一個之後會用
+  <code>--apply &lt;plan-id&gt;</code> 重跑腳本,只會把<strong>那一個鍵</strong>寫進
+  <code>~/.claude/settings.json</code>。
+</p>
+<ul>
+  <li>每次寫入前會自動生成一份 <code>.bak.&lt;ISO 時間戳&gt;</code> 備份。</li>
+  <li><code>ANTHROPIC_AUTH_TOKEN</code> 以及其他所有設定都不會被動。</li>
+  <li>變更在<strong>下一次</strong>啟動 Claude Code 時生效 —— 系統提示是啟動時組裝的,不是每回合都重算。</li>
+</ul>
+
+<h2 id="example">範例輸出</h2>
+<p>在一台有 ~300 個 skill、預算已調好的機器上跑 <code>/pms-inspector</code>:</p>
+<pre><code>═══ Claude Code 上下文載入檢查器 ═══
+顯示語言: zh-TW (可透過 --lang 覆寫,例如 --lang en)
+
+設定位置: ~/.claude/settings.json
+  上下文視窗: 200,000 tokens (~800,000 字元)
+  skillListingBudgetFraction = 0.099
+     ↳ skill 清單佔 ctx 的比例(CC 設定;預設 0.01)
+     ↳ 預算 79,200 字元 (佔 ctx 的 9.90%)
+  skillListingMaxDescChars = 1536
+     ↳ 單個 skill 描述字元上限(CC 設定;預設 1536)
+  已啟用外掛: claude-mem, ecc, andrej-karpathy-skills, pms-inspector
+
+┌─ 物件總覽 ───────────────────────────────────────────────────────┐
+│ Skills :  295   Agents :   67   MCP :   2   Hooks :    2         │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ Skill 清單字元預算 ─────────────────────────────────────────────┐
+│ 全量 (name+desc, 未裁剪)             18,807 tokens / 75,228 字元 │
+│ per-cap 後 (≤1536/skill)             18,807 tokens / 75,228 字元 │
+│ 預算 (0.099 × ctx)                   19,800 tokens / 79,200 字元 │
+│ 最終注入系統提示                     18,807 tokens / 75,228 字元 │
+│ 佔 ctx 視窗                                                9.40% │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ Skill 描述載入狀態 ─────────────────────────────────────────────┐
+│ ✅ 完整載入                            295 (100.00%) ==========  │
+│ ✂  被 MaxDescChars 截斷                  0 (  0.00%)             │
+│ ⚠  被 BudgetFraction 壓縮                0 (  0.00%)             │
+│ ❌ 僅剩名稱                              0 (  0.00%)             │
+│ ·  本就無描述                            0 (  0.00%)             │
+└──────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2 id="i18n">開箱即用的 8 種語言</h2>
+<p>
+  <code>pms-inspector</code> 支援
+  <strong>en、zh-CN、zh-TW、ja、ko、fr、de、es</strong>。顯示語言按優先級自動偵測:
+</p>
+<ol>
+  <li><code>--lang &lt;code&gt;</code> 命令列參數</li>
+  <li><code>~/.claude/settings.json</code> 裡的 <code>language</code> 欄位(也接受在地名稱,如 <code>"简体中文"</code>、<code>"日本語"</code>、<code>"français"</code>)</li>
+  <li>環境變數 <code>$LC_ALL</code> / <code>$LANG</code> / <code>$LANGUAGE</code></li>
+  <li>退回 <code>en</code></li>
+</ol>
+
+<h2 id="safety">安全性</h2>
+<ul>
+  <li>預設呼叫唯讀。<code>--apply &lt;plan-id&gt;</code> 是<strong>唯一</strong>會寫檔的程式路徑,並且只會 patch <code>~/.claude/settings.json</code> 裡的一個目標鍵(<code>skillListingBudgetFraction</code>、<code>skillListingMaxDescChars</code>,或 <code>enabledPlugins</code> 裡的一項)。每次修改前都會生成一份 <code>.bak.&lt;ISO 時間戳&gt;</code> 快照。</li>
+  <li>不讀取 <code>ANTHROPIC_AUTH_TOKEN</code> 或任何驗證欄位 —— 只讀跟載入相關的鍵。</li>
+  <li>零 npm 相依。純 Node 18+ 內建模組(<code>fs</code>、<code>path</code>、<code>os</code>)。</li>
+  <li>跨平台(macOS、Linux、Windows)。</li>
+</ul>
+
+<footer>
+  <p>
+    MIT 授權 · <a href="https://github.com/alwinlin23/pms-inspector">github.com/alwinlin23/pms-inspector</a>
+  </p>
+</footer>
+
+</div>
+</body>
+</html>

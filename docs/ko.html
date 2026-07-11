@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pms-inspector — Claude Code 세션이 실제로 무엇을 로드하는지 확인</title>
+<meta name="description" content="의존성 제로 Claude Code 플러그인. 시스템 프롬프트에 들어간 플러그인 / MCP / 스킬 / 에이전트 / 훅을 바이트·토큰 단위로 감사하고, 원클릭 튜닝을 제안합니다.">
+<link rel="canonical" href="https://alwinlin23.github.io/pms-inspector/ko.html">
+<link rel="alternate" hreflang="en" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="alternate" hreflang="zh-CN" href="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
+<link rel="alternate" hreflang="zh-TW" href="https://alwinlin23.github.io/pms-inspector/zh-TW.html">
+<link rel="alternate" hreflang="ja" href="https://alwinlin23.github.io/pms-inspector/ja.html">
+<link rel="alternate" hreflang="ko" href="https://alwinlin23.github.io/pms-inspector/ko.html">
+<link rel="alternate" hreflang="fr" href="https://alwinlin23.github.io/pms-inspector/fr.html">
+<link rel="alternate" hreflang="de" href="https://alwinlin23.github.io/pms-inspector/de.html">
+<link rel="alternate" hreflang="es" href="https://alwinlin23.github.io/pms-inspector/es.html">
+<link rel="alternate" hreflang="x-default" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="lang-bar" aria-label="언어">
+  <a href="./index.html" hreflang="en">English</a> ·
+  <a href="./zh-CN.html" hreflang="zh-CN">简体中文</a> ·
+  <a href="./zh-TW.html" hreflang="zh-TW">繁體中文</a> ·
+  <a href="./ja.html" hreflang="ja">日本語</a> ·
+  <strong>한국어</strong> ·
+  <a href="./fr.html" hreflang="fr">Français</a> ·
+  <a href="./de.html" hreflang="de">Deutsch</a> ·
+  <a href="./es.html" hreflang="es">Español</a>
+</nav>
+
+<header class="hero">
+  <h1>pms-inspector</h1>
+  <p class="tag"><strong>P/M/S</strong> = Plugin / MCP / Skill Inspector(플러그인 / MCP / 스킬 인스펙터).</p>
+  <p class="lede">
+    의존성 제로의 Claude Code 플러그인. 현재 세션이 시스템 프롬프트에 무엇을 밀어 넣는지
+    —— 활성화된 모든 플러그인, MCP 서버, 스킬, 에이전트, 훅 —— 를 바이트/토큰 단위로 정확히 보여주고, 원클릭으로 적용 가능한 튜닝 제안을 제시합니다.
+  </p>
+  <div class="cta-row">
+    <a class="btn primary" href="https://github.com/alwinlin23/pms-inspector">GitHub 에서 보기 →</a>
+    <a class="btn" href="#install">설치</a>
+    <a class="btn" href="#example">출력 예시 보기</a>
+  </div>
+</header>
+
+<h2 id="why">왜 필요한가</h2>
+<p>
+  Claude Code 는 활성화된 모든 플러그인의 모든 스킬을 자동으로 시스템 프롬프트에 로드합니다. 플러그인이 많은 환경(예:
+  <code>ecc</code> + <code>claude-mem</code>, 디스크에 ~300 개 스킬)에서는 기본값
+  <code>skillListingBudgetFraction: 0.01</code> 이 스킬 설명을 <em>이름만 남기고</em> 조용히 압축해 버려, 무슨 일이 벌어졌는지 보이지 않습니다. 모델이 잘못된 스킬을 골라도 이유를 알 수 없습니다.
+</p>
+<p><code>/pms-inspector</code> 는 이런 것을 알려줍니다:</p>
+<ul>
+  <li>활성화된 플러그인 / MCP 서버 / 스킬 / 에이전트 / 훅 개수.</li>
+  <li>각 카테고리가 차지하는 바이트 및 토큰 수.</li>
+  <li>스킬별 로드 상태(4단계, 아래 참조).</li>
+  <li>스킬 목록이 컨텍스트 창의 몇 %를 차지하는지.</li>
+  <li>어떤 노브를 돌려야 해결되는지 —— 그리고 원클릭으로 적용할 수 있습니다.</li>
+</ul>
+<blockquote>
+  이것은 <code>/context</code> 의 대체품이 <strong>아닙니다</strong>. <code>/context</code> 는 <em>런타임</em> 상태(현재 대화에 무엇이 있는지)를 보여줍니다. <code>/pms-inspector</code> 는 디스크의 설정을 읽어 <em>다음</em> 세션이 무엇을 로드할지 예측합니다.
+</blockquote>
+
+<h2 id="states">네 가지 로드 상태</h2>
+<p>디스크의 모든 스킬은 반드시 이 네 단계 중 하나에 해당합니다:</p>
+<div class="states">
+  <div class="state full">
+    <span class="badge">full</span>
+    <p>설명이 온전히 로드됨. 모델이 설명을 보고 스킬을 선택할 수 있음.</p>
+  </div>
+  <div class="state trunc">
+    <span class="badge">desc-truncated</span>
+    <p><code>skillListingMaxDescChars</code> 로 잘림. 읽을 수는 있지만 끝부분이 사라짐.</p>
+  </div>
+  <div class="state comp">
+    <span class="badge">budget-compressed</span>
+    <p>글로벌 <code>skillListingBudgetFraction</code> 로 압축됨. 예산 안에 맞추기 위해 짧아졌음.</p>
+  </div>
+  <div class="state name">
+    <span class="badge">name-only</span>
+    <p>설명이 완전히 버려짐. <code>opensource-forker</code> 같은 slug 만 보이므로 판단 근거가 부족함.</p>
+  </div>
+</div>
+
+<h2 id="install">설치</h2>
+<p>marketplace 를 추가하고 플러그인을 설치:</p>
+<pre><code>/plugin marketplace add https://github.com/alwinlin23/pms-inspector
+/plugin install pms-inspector@pms-inspector</code></pre>
+
+<p>새 Claude Code 세션에서:</p>
+<pre><code>/pms-inspector</code></pre>
+
+<h2 id="usage">사용법</h2>
+<pre><code>/pms-inspector                    # 사람이 읽는 요약 (언어 자동 감지)
+/pms-inspector --json             # 기계 파싱용 JSON
+/pms-inspector --ctx 200000       # 가정 컨텍스트 창 재정의
+/pms-inspector --verbose          # 스킬별 상세 분류
+/pms-inspector --lang ko          # 표시 언어 강제
+/pms-inspector --apply &lt;plan-id&gt;  # 제안된 튜닝 플랜 적용</code></pre>
+
+<h2 id="tuning">대화식 튜닝</h2>
+<p>
+  리포트가 예산이 <strong>오버플로우</strong>(일부 스킬이 name-only 로 떨어짐)이거나 명백히 <strong>과대</strong>(실제 필요량의 두 배 이상)라고 판단하면, Claude Code 는 스크립트가 계산한 구체적인 튜닝 플랜을 나열하는 선택 창을 띄웁니다. 하나를 선택하면
+  <code>--apply &lt;plan-id&gt;</code> 로 스크립트를 재실행하고, <code>~/.claude/settings.json</code> 의 <strong>해당 키 하나만</strong> 씁니다.
+</p>
+<ul>
+  <li>매번 쓰기 전에 자동으로 <code>.bak.&lt;ISO 타임스탬프&gt;</code> 백업을 생성합니다.</li>
+  <li><code>ANTHROPIC_AUTH_TOKEN</code> 을 포함한 다른 모든 설정은 절대 건드리지 않습니다.</li>
+  <li>변경 사항은 <strong>다음번</strong> Claude Code 실행 시 적용됩니다 —— 시스템 프롬프트는 턴마다가 아니라 시작 시 조립되기 때문입니다.</li>
+</ul>
+
+<h2 id="example">출력 예시</h2>
+<p>약 300 스킬, 예산이 조정된 머신에서 <code>/pms-inspector</code> 실행:</p>
+<pre><code>═══ Claude Code 컨텍스트 인스펙터 ═══
+표시 언어: ko (--lang 으로 재정의 가능, 예: --lang en)
+
+설정 위치: ~/.claude/settings.json
+  컨텍스트 창: 200,000 tokens (~800,000 문자)
+  skillListingBudgetFraction = 0.099
+     ↳ ctx 중 스킬 목록에 할당되는 비율 (CC 설정; 기본 0.01)
+     ↳ 예산 79,200 문자 (ctx 의 9.90%)
+  skillListingMaxDescChars = 1536
+     ↳ 스킬당 설명 문자 상한 (CC 설정; 기본 1536)
+  활성화된 플러그인: claude-mem, ecc, andrej-karpathy-skills, pms-inspector
+
+┌─ 객체 요약 ──────────────────────────────────────────────────────┐
+│ Skills :  295   Agents :   67   MCP :   2   Hooks :    2         │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ 스킬 목록 문자 예산 ────────────────────────────────────────────┐
+│ 전체 (name+desc, 미압축)             18,807 tokens / 75,228 문자 │
+│ per-cap 후 (≤1536/skill)             18,807 tokens / 75,228 문자 │
+│ 예산 (0.099 × ctx)                   19,800 tokens / 79,200 문자 │
+│ 최종 시스템 프롬프트에 주입          18,807 tokens / 75,228 문자 │
+│ ctx 창 비율                                                9.40% │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ 스킬 설명 로드 상태 ────────────────────────────────────────────┐
+│ ✅ 완전 로드                           295 (100.00%) ==========  │
+│ ✂  MaxDescChars 로 잘림                  0 (  0.00%)             │
+│ ⚠  BudgetFraction 로 압축                0 (  0.00%)             │
+│ ❌ 이름만                                0 (  0.00%)             │
+│ ·  원래 설명 없음                        0 (  0.00%)             │
+└──────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2 id="i18n">기본 제공되는 8개 언어</h2>
+<p>
+  <code>pms-inspector</code> 는
+  <strong>en, zh-CN, zh-TW, ja, ko, fr, de, es</strong> 를 지원합니다. 표시 언어는 다음 우선순위로 자동 감지됩니다:
+</p>
+<ol>
+  <li><code>--lang &lt;code&gt;</code> CLI 플래그</li>
+  <li><code>~/.claude/settings.json</code> 의 <code>language</code> 필드 (<code>"简体中文"</code>, <code>"日本語"</code>, <code>"français"</code> 같은 현지 이름도 허용)</li>
+  <li>환경 변수 <code>$LC_ALL</code> / <code>$LANG</code> / <code>$LANGUAGE</code></li>
+  <li><code>en</code> 으로 폴백</li>
+</ol>
+
+<h2 id="safety">안전성</h2>
+<ul>
+  <li>기본 실행은 읽기 전용입니다. <code>--apply &lt;plan-id&gt;</code> 가 <strong>유일하게</strong> 쓰기를 수행하는 코드 경로이며, <code>~/.claude/settings.json</code> 안의 대상 키 하나(<code>skillListingBudgetFraction</code>, <code>skillListingMaxDescChars</code>, 또는 <code>enabledPlugins</code> 의 항목 하나)만 패치합니다. 변경 전마다 <code>.bak.&lt;ISO 타임스탬프&gt;</code> 스냅샷을 생성합니다.</li>
+  <li><code>ANTHROPIC_AUTH_TOKEN</code> 이나 인증 필드는 읽지 않습니다 —— 로드 관련 키만 읽습니다.</li>
+  <li>npm 의존성 제로. 순수 Node 18+ 빌트인 (<code>fs</code>, <code>path</code>, <code>os</code>).</li>
+  <li>크로스 플랫폼 (macOS, Linux, Windows).</li>
+</ul>
+
+<footer>
+  <p>
+    MIT 라이선스 · <a href="https://github.com/alwinlin23/pms-inspector">github.com/alwinlin23/pms-inspector</a>
+  </p>
+</footer>
+
+</div>
+</body>
+</html>

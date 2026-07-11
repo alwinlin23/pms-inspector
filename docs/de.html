@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pms-inspector — Sieh, was deine Claude-Code-Sitzung wirklich lädt</title>
+<meta name="description" content="Claude-Code-Plugin ohne Abhängigkeiten, das den System-Prompt prüft: Plugins, MCP-Server, Skills, Agents, Hooks — mit Byte-/Token-Rechnung und Ein-Klick-Tuning.">
+<link rel="canonical" href="https://alwinlin23.github.io/pms-inspector/de.html">
+<link rel="alternate" hreflang="en" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="alternate" hreflang="zh-CN" href="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
+<link rel="alternate" hreflang="zh-TW" href="https://alwinlin23.github.io/pms-inspector/zh-TW.html">
+<link rel="alternate" hreflang="ja" href="https://alwinlin23.github.io/pms-inspector/ja.html">
+<link rel="alternate" hreflang="ko" href="https://alwinlin23.github.io/pms-inspector/ko.html">
+<link rel="alternate" hreflang="fr" href="https://alwinlin23.github.io/pms-inspector/fr.html">
+<link rel="alternate" hreflang="de" href="https://alwinlin23.github.io/pms-inspector/de.html">
+<link rel="alternate" hreflang="es" href="https://alwinlin23.github.io/pms-inspector/es.html">
+<link rel="alternate" hreflang="x-default" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="lang-bar" aria-label="Sprache">
+  <a href="./index.html" hreflang="en">English</a> ·
+  <a href="./zh-CN.html" hreflang="zh-CN">简体中文</a> ·
+  <a href="./zh-TW.html" hreflang="zh-TW">繁體中文</a> ·
+  <a href="./ja.html" hreflang="ja">日本語</a> ·
+  <a href="./ko.html" hreflang="ko">한국어</a> ·
+  <a href="./fr.html" hreflang="fr">Français</a> ·
+  <strong>Deutsch</strong> ·
+  <a href="./es.html" hreflang="es">Español</a>
+</nav>
+
+<header class="hero">
+  <h1>pms-inspector</h1>
+  <p class="tag"><strong>P/M/S</strong> = Plugin / MCP / Skill Inspector (Plugin-/MCP-/Skill-Inspektor).</p>
+  <p class="lede">
+    Ein Claude-Code-Plugin ohne Abhängigkeiten, das exakt zeigt, was deine Sitzung
+    in den System-Prompt lädt — jedes aktivierte Plugin, jeden MCP-Server, jeden
+    Skill, jeden Agent und jeden Hook — mit Byte- und Token-Rechnung sowie
+    konkreten Optimierungsvorschlägen, die per Klick angewendet werden können.
+  </p>
+  <div class="cta-row">
+    <a class="btn primary" href="https://github.com/alwinlin23/pms-inspector">Auf GitHub ansehen →</a>
+    <a class="btn" href="#install">Installation</a>
+    <a class="btn" href="#example">Beispielausgabe</a>
+  </div>
+</header>
+
+<h2 id="why">Warum du das brauchst</h2>
+<p>
+  Claude Code lädt automatisch jeden Skill jedes aktivierten Plugins. Bei einem
+  vollen Setup (z. B. <code>ecc</code> + <code>claude-mem</code>, ~300 Skills auf der Platte)
+  komprimiert der Standardwert <code>skillListingBudgetFraction: 0.01</code> die
+  Skill-Beschreibungen still auf <em>nur den Namen</em>, und du siehst nichts davon.
+  Dein Modell wählt den falschen Skill, und du weißt nicht warum.
+</p>
+<p><code>/pms-inspector</code> sagt dir:</p>
+<ul>
+  <li>Wie viele Plugins / MCP-Server / Skills / Agents / Hooks aktiv sind.</li>
+  <li>Wie viele Bytes und Tokens jede Kategorie kostet.</li>
+  <li>Den Ladezustand pro Skill in vier Klassen (siehe unten).</li>
+  <li>Wie viel Prozent des Kontextfensters die Skill-Liste verbraucht.</li>
+  <li>Welchen Regler du drehen musst — und du kannst es per Klick anwenden.</li>
+</ul>
+<blockquote>
+  Dies ist <strong>kein</strong> Ersatz für <code>/context</code>. <code>/context</code>
+  zeigt den <em>Laufzeit</em>zustand (was aktuell im Gespräch steckt).
+  <code>/pms-inspector</code> liest deine Konfiguration von der Festplatte und
+  sagt voraus, was die <em>nächste</em> Sitzung laden wird.
+</blockquote>
+
+<h2 id="states">Vier Ladezustände</h2>
+<p>Jeder Skill auf der Platte landet in genau einer dieser Klassen:</p>
+<div class="states">
+  <div class="state full">
+    <span class="badge">full</span>
+    <p>Beschreibung vollständig geladen. Das Modell kann diesen Skill anhand seiner Beschreibung auswählen.</p>
+  </div>
+  <div class="state trunc">
+    <span class="badge">desc-truncated</span>
+    <p>Durch <code>skillListingMaxDescChars</code> gekappt. Lesbar, aber Ende fehlt.</p>
+  </div>
+  <div class="state comp">
+    <span class="badge">budget-compressed</span>
+    <p>Durch den globalen <code>skillListingBudgetFraction</code> komprimiert. Beschreibung gekürzt, um ins Budget zu passen.</p>
+  </div>
+  <div class="state name">
+    <span class="badge">name-only</span>
+    <p>Beschreibung vollständig verworfen. Das Modell sieht nur einen Slug wie <code>opensource-forker</code> — oft zu wenig zum Auswählen.</p>
+  </div>
+</div>
+
+<h2 id="install">Installation</h2>
+<p>Marketplace hinzufügen und Plugin installieren:</p>
+<pre><code>/plugin marketplace add https://github.com/alwinlin23/pms-inspector
+/plugin install pms-inspector@pms-inspector</code></pre>
+
+<p>Dann in einer neuen Claude-Code-Sitzung:</p>
+<pre><code>/pms-inspector</code></pre>
+
+<h2 id="usage">Verwendung</h2>
+<pre><code>/pms-inspector                    # Menschenlesbare Zusammenfassung (Sprache automatisch)
+/pms-inspector --json             # Maschinenlesbares JSON
+/pms-inspector --ctx 200000       # Angenommenes Kontextfenster überschreiben
+/pms-inspector --verbose          # Aufschlüsselung pro Skill
+/pms-inspector --lang de          # Anzeigesprache erzwingen
+/pms-inspector --apply &lt;plan-id&gt;  # Vorgeschlagenen Optimierungsplan anwenden</code></pre>
+
+<h2 id="tuning">Interaktives Tuning</h2>
+<p>
+  Wenn der Report erkennt, dass das Budget entweder <strong>überläuft</strong>
+  (einzelne Skills fallen auf name-only zurück) oder deutlich <strong>überdimensioniert</strong>
+  ist (Budget mehr als doppelt so groß wie tatsächlich benötigt), öffnet Claude Code
+  ein Auswahlfenster mit den vom Skript berechneten konkreten Plänen. Bei Auswahl
+  wird das Skript mit <code>--apply &lt;plan-id&gt;</code> erneut ausgeführt und
+  schreibt <strong>nur diesen einen Schlüssel</strong> in <code>~/.claude/settings.json</code>.
+</p>
+<ul>
+  <li>Vor jedem Schreibvorgang wird automatisch ein <code>.bak.&lt;ISO-Zeitstempel&gt;</code>-Backup erzeugt.</li>
+  <li><code>ANTHROPIC_AUTH_TOKEN</code> und alle anderen Einstellungen bleiben unangetastet.</li>
+  <li>Änderungen wirken beim <strong>nächsten</strong> Start von Claude Code — der System-Prompt wird beim Start zusammengebaut, nicht pro Turn.</li>
+</ul>
+
+<h2 id="example">Beispielausgabe</h2>
+<p>Aufruf von <code>/pms-inspector</code> auf einem Rechner mit ~300 Skills, Budget eingestellt:</p>
+<pre><code>═══ Claude-Code-Kontext-Inspektor ═══
+Sprache: de (mit --lang überschreibbar, z. B. --lang en)
+
+Konfiguriert in: ~/.claude/settings.json
+  Kontextfenster: 200,000 Tokens (~800,000 Zeichen)
+  skillListingBudgetFraction = 0.099
+     ↳ Anteil des ctx für die Skill-Liste (CC-Einstellung; Standard 0.01)
+     ↳ Budget 79,200 Zeichen (9.90% des ctx)
+  skillListingMaxDescChars = 1536
+     ↳ Zeichenobergrenze pro Skill-Beschreibung (CC-Einstellung; Standard 1536)
+  Aktive Plugins: claude-mem, ecc, andrej-karpathy-skills, pms-inspector
+
+┌─ Übersicht ──────────────────────────────────────────────────────┐
+│ Skills :  295   Agents :   67   MCP :   2   Hooks :    2         │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ Zeichenbudget der Skill-Liste ──────────────────────────────────┐
+│ Voll (name+desc, ungekürzt)         18,807 Tokens / 75,228 Zchn. │
+│ Nach per-cap (≤1536/skill)          18,807 Tokens / 75,228 Zchn. │
+│ Budget (0.099 × ctx)                19,800 Tokens / 79,200 Zchn. │
+│ Final in System-Prompt injiziert    18,807 Tokens / 75,228 Zchn. │
+│ Prozent des ctx-Fensters                                   9.40% │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ Ladezustand der Skill-Beschreibungen ───────────────────────────┐
+│ ✅ Voll                                295 (100.00%) ==========  │
+│ ✂  Durch MaxDescChars gekappt            0 (  0.00%)             │
+│ ⚠  Durch BudgetFraction komprimiert      0 (  0.00%)             │
+│ ❌ Nur Name                              0 (  0.00%)             │
+│ ·  Keine Beschreibung                    0 (  0.00%)             │
+└──────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2 id="i18n">8 Sprachen ab Werk</h2>
+<p>
+  <code>pms-inspector</code> spricht
+  <strong>en, zh-CN, zh-TW, ja, ko, fr, de, es</strong>. Die Anzeigesprache wird
+  nach folgender Priorität automatisch erkannt:
+</p>
+<ol>
+  <li>CLI-Flag <code>--lang &lt;code&gt;</code></li>
+  <li>Feld <code>language</code> in <code>~/.claude/settings.json</code> (akzeptiert auch lokale Namen wie <code>"简体中文"</code>, <code>"日本語"</code>, <code>"français"</code>)</li>
+  <li>Umgebungsvariablen <code>$LC_ALL</code> / <code>$LANG</code> / <code>$LANGUAGE</code></li>
+  <li>Fallback auf <code>en</code></li>
+</ol>
+
+<h2 id="safety">Sicherheit</h2>
+<ul>
+  <li>Der Standardaufruf ist nur lesend. <code>--apply &lt;plan-id&gt;</code> ist der <strong>einzige</strong> Codepfad, der irgendwo schreibt, und patcht nur einen Zielschlüssel in <code>~/.claude/settings.json</code> (<code>skillListingBudgetFraction</code>, <code>skillListingMaxDescChars</code> oder einen Eintrag in <code>enabledPlugins</code>). Vor jeder Änderung wird ein <code>.bak.&lt;ISO-Zeitstempel&gt;</code>-Snapshot geschrieben.</li>
+  <li>Liest weder <code>ANTHROPIC_AUTH_TOKEN</code> noch andere Auth-Felder — nur die für den Ladevorgang relevanten Schlüssel.</li>
+  <li>Null npm-Abhängigkeiten. Reine Node-18+-Builtins (<code>fs</code>, <code>path</code>, <code>os</code>).</li>
+  <li>Plattformübergreifend (macOS, Linux, Windows).</li>
+</ul>
+
+<footer>
+  <p>
+    MIT-lizenziert · <a href="https://github.com/alwinlin23/pms-inspector">github.com/alwinlin23/pms-inspector</a>
+  </p>
+</footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pms-inspector — Claude Code セッションが実際に何をロードしているかを可視化</title>
+<meta name="description" content="依存ゼロの Claude Code プラグイン。システムプロンプトに入ったプラグイン / MCP / スキル / エージェント / フックをバイト・token 単位で監査し、ワンクリック調整を提示します。">
+<link rel="canonical" href="https://alwinlin23.github.io/pms-inspector/ja.html">
+<link rel="alternate" hreflang="en" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="alternate" hreflang="zh-CN" href="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
+<link rel="alternate" hreflang="zh-TW" href="https://alwinlin23.github.io/pms-inspector/zh-TW.html">
+<link rel="alternate" hreflang="ja" href="https://alwinlin23.github.io/pms-inspector/ja.html">
+<link rel="alternate" hreflang="ko" href="https://alwinlin23.github.io/pms-inspector/ko.html">
+<link rel="alternate" hreflang="fr" href="https://alwinlin23.github.io/pms-inspector/fr.html">
+<link rel="alternate" hreflang="de" href="https://alwinlin23.github.io/pms-inspector/de.html">
+<link rel="alternate" hreflang="es" href="https://alwinlin23.github.io/pms-inspector/es.html">
+<link rel="alternate" hreflang="x-default" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="wrap">
+
+<nav class="lang-bar" aria-label="言語">
+  <a href="./index.html" hreflang="en">English</a> ·
+  <a href="./zh-CN.html" hreflang="zh-CN">简体中文</a> ·
+  <a href="./zh-TW.html" hreflang="zh-TW">繁體中文</a> ·
+  <strong>日本語</strong> ·
+  <a href="./ko.html" hreflang="ko">한국어</a> ·
+  <a href="./fr.html" hreflang="fr">Français</a> ·
+  <a href="./de.html" hreflang="de">Deutsch</a> ·
+  <a href="./es.html" hreflang="es">Español</a>
+</nav>
+
+<header class="hero">
+  <h1>pms-inspector</h1>
+  <p class="tag"><strong>P/M/S</strong> = Plugin / MCP / Skill Inspector(プラグイン / MCP / スキル検査ツール)。</p>
+  <p class="lede">
+    依存ゼロの Claude Code プラグインです。現在のセッションがシステムプロンプトへ何を注入しているのか
+    ── 有効なプラグイン、MCP サーバー、スキル、エージェント、フックのすべて ── をバイト数と token 数の内訳付きで正確に表示し、そのままワンクリックで適用できる調整プランを提示します。
+  </p>
+  <div class="cta-row">
+    <a class="btn primary" href="https://github.com/alwinlin23/pms-inspector">GitHub で見る →</a>
+    <a class="btn" href="#install">インストール</a>
+    <a class="btn" href="#example">出力例を見る</a>
+  </div>
+</header>
+
+<h2 id="why">なぜ必要か</h2>
+<p>
+  Claude Code は有効化されたすべてのプラグインから、すべてのスキルを自動的にロードします。プラグインを多く入れた環境(例:
+  <code>ecc</code> + <code>claude-mem</code>、ディスク上に約 300 スキル)ではデフォルトの
+  <code>skillListingBudgetFraction: 0.01</code> によってスキル説明が<em>名前だけ</em>まで無音で圧縮され、状況が全く見えなくなります。モデルが誤ったスキルを選んでも、その理由は分かりません。
+</p>
+<p><code>/pms-inspector</code> は次を教えてくれます:</p>
+<ul>
+  <li>有効なプラグイン / MCP サーバー / スキル / エージェント / フックの数。</li>
+  <li>各カテゴリのバイト数と token 数。</li>
+  <li>スキルごとのロード状態(4 段階、下記参照)。</li>
+  <li>想定コンテキストウィンドウのうちスキル一覧が何 % を占めるか。</li>
+  <li>どのノブを回せば解決するか ── そしてワンクリックで適用できます。</li>
+</ul>
+<blockquote>
+  これは <code>/context</code> の代替では<strong>ありません</strong>。<code>/context</code> は<em>ランタイム</em>状態(現在の会話に何が入っているか)を表示します。<code>/pms-inspector</code> はディスク上の設定を読み、<em>次の</em>セッションで何がロードされるかを予測します。
+</blockquote>
+
+<h2 id="states">4 つのロード状態</h2>
+<p>ディスク上のすべてのスキルは、必ずこの 4 段階のいずれかに落ちます:</p>
+<div class="states">
+  <div class="state full">
+    <span class="badge">full</span>
+    <p>説明が完全にロード済み。モデルは説明からスキルを選択できます。</p>
+  </div>
+  <div class="state trunc">
+    <span class="badge">desc-truncated</span>
+    <p><code>skillListingMaxDescChars</code> で切り詰められた。読めるが末尾が欠落。</p>
+  </div>
+  <div class="state comp">
+    <span class="badge">budget-compressed</span>
+    <p>グローバルな <code>skillListingBudgetFraction</code> で圧縮された。予算に収めるため短縮されています。</p>
+  </div>
+  <div class="state name">
+    <span class="badge">name-only</span>
+    <p>説明が完全に破棄され、<code>opensource-forker</code> のような slug しか見えない ── 選択判断には不十分。</p>
+  </div>
+</div>
+
+<h2 id="install">インストール</h2>
+<p>marketplace を追加し、プラグインをインストール:</p>
+<pre><code>/plugin marketplace add https://github.com/alwinlin23/pms-inspector
+/plugin install pms-inspector@pms-inspector</code></pre>
+
+<p>新しい Claude Code セッションで:</p>
+<pre><code>/pms-inspector</code></pre>
+
+<h2 id="usage">使い方</h2>
+<pre><code>/pms-inspector                    # 人間向けサマリー(言語を自動検出)
+/pms-inspector --json             # 機械可読 JSON
+/pms-inspector --ctx 200000       # 想定コンテキストウィンドウを上書き
+/pms-inspector --verbose          # スキルごとの詳細
+/pms-inspector --lang ja          # 表示言語を強制
+/pms-inspector --apply &lt;plan-id&gt;  # 提案された調整プランを適用</code></pre>
+
+<h2 id="tuning">対話的な調整</h2>
+<p>
+  予算が<strong>オーバーフロー</strong>(一部スキルが name-only に落ちる)または明らかに<strong>過大</strong>(実際に必要な量の 2 倍以上)と判定された場合、Claude Code はスクリプトが計算した具体的なプランを列挙する選択ウィンドウをポップアップします。選択すると
+  <code>--apply &lt;plan-id&gt;</code> でスクリプトが再実行され、<code>~/.claude/settings.json</code> の<strong>その 1 キーだけ</strong>を書き換えます。
+</p>
+<ul>
+  <li>書き込みの前に自動で <code>.bak.&lt;ISO タイムスタンプ&gt;</code> バックアップを作成します。</li>
+  <li><code>ANTHROPIC_AUTH_TOKEN</code> を含む他のすべての設定は一切触りません。</li>
+  <li>変更は<strong>次回</strong>の Claude Code 起動時に有効になります ── システムプロンプトはターンごとではなく起動時に組み立てられるためです。</li>
+</ul>
+
+<h2 id="example">出力例</h2>
+<p>約 300 スキル、予算調整済みのマシンで <code>/pms-inspector</code> を実行:</p>
+<pre><code>═══ Claude Code コンテキスト検査ツール ═══
+表示言語: ja (--lang で上書き可、例: --lang en)
+
+設定場所: ~/.claude/settings.json
+  コンテキストウィンドウ: 200,000 tokens (~800,000 文字)
+  skillListingBudgetFraction = 0.099
+     ↳ ctx のうちスキル一覧に割り当てる比率(CC 設定;既定 0.01)
+     ↳ 予算 79,200 文字 (ctx の 9.90%)
+  skillListingMaxDescChars = 1536
+     ↳ スキル 1 件あたりの説明文字上限(CC 設定;既定 1536)
+  有効なプラグイン: claude-mem, ecc, andrej-karpathy-skills, pms-inspector
+
+┌─ オブジェクト概要 ───────────────────────────────────────────────┐
+│ Skills :  295   Agents :   67   MCP :   2   Hooks :    2         │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ スキル一覧の文字予算 ───────────────────────────────────────────┐
+│ フル (name+desc, 未圧縮)             18,807 tokens / 75,228 文字 │
+│ per-cap 後 (≤1536/skill)             18,807 tokens / 75,228 文字 │
+│ 予算 (0.099 × ctx)                   19,800 tokens / 79,200 文字 │
+│ 最終的にシステムプロンプトへ注入     18,807 tokens / 75,228 文字 │
+│ ctx ウィンドウの比率                                       9.40% │
+└──────────────────────────────────────────────────────────────────┘
+
+┌─ スキル説明のロード状態 ─────────────────────────────────────────┐
+│ ✅ フル                                295 (100.00%) ==========  │
+│ ✂  MaxDescChars で切詰め                 0 (  0.00%)             │
+│ ⚠  BudgetFraction で圧縮                 0 (  0.00%)             │
+│ ❌ 名前のみ                              0 (  0.00%)             │
+│ ·  もとから説明なし                      0 (  0.00%)             │
+└──────────────────────────────────────────────────────────────────┘</code></pre>
+
+<h2 id="i18n">最初から 8 言語対応</h2>
+<p>
+  <code>pms-inspector</code> は
+  <strong>en、zh-CN、zh-TW、ja、ko、fr、de、es</strong> をサポートします。表示言語は次の優先順で自動検出されます:
+</p>
+<ol>
+  <li><code>--lang &lt;code&gt;</code> CLI フラグ</li>
+  <li><code>~/.claude/settings.json</code> の <code>language</code> フィールド(<code>"简体中文"</code>、<code>"日本語"</code>、<code>"français"</code> のような現地名称も受け付けます)</li>
+  <li>環境変数 <code>$LC_ALL</code> / <code>$LANG</code> / <code>$LANGUAGE</code></li>
+  <li><code>en</code> へフォールバック</li>
+</ol>
+
+<h2 id="safety">安全性</h2>
+<ul>
+  <li>デフォルト実行は読み取り専用です。<code>--apply &lt;plan-id&gt;</code> が<strong>唯一</strong>書き込みを行うコードパスであり、書き込むのは <code>~/.claude/settings.json</code> 内の対象 1 キー(<code>skillListingBudgetFraction</code>、<code>skillListingMaxDescChars</code>、または <code>enabledPlugins</code> の 1 項目)のみです。書き込み前に <code>.bak.&lt;ISO タイムスタンプ&gt;</code> スナップショットを必ず作成します。</li>
+  <li><code>ANTHROPIC_AUTH_TOKEN</code> や認証系フィールドは一切読みません ── 読み込むのはロードに関わるキーだけです。</li>
+  <li>npm 依存ゼロ。純粋な Node 18+ ビルトイン(<code>fs</code>、<code>path</code>、<code>os</code>)。</li>
+  <li>クロスプラットフォーム(macOS、Linux、Windows)。</li>
+</ul>
+
+<footer>
+  <p>
+    MIT ライセンス · <a href="https://github.com/alwinlin23/pms-inspector">github.com/alwinlin23/pms-inspector</a>
+  </p>
+</footer>
+
+</div>
+</body>
+</html>
