@@ -1,10 +1,26 @@
 <!DOCTYPE html>
+<!--
+  docs/_template.html — single HTML master for 8 localized pages.
+  Rendered by docs/_build.mjs from docs/_i18n.json.
+  DO NOT edit the generated docs/{index,zh-CN,zh-TW,ja,ko,fr,de,es}.html by hand;
+  edit this template or _i18n.json and re-run `node docs/_build.mjs`.
+
+  Placeholder syntax (double-braces, shown here with a zero-width space so the
+  build renderer does not mistake this comment for a real placeholder):
+    ​{​{key​}​}          → i18n[lang][key]   (raw HTML value; renderer does not escape)
+    ​{​{a.b.c​}​}        → dot-path lookup
+    ​{​{langDropdown​}​} → pre-rendered 8-item language menu (current language marked)
+-->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>pms-inspector — Voir ce que votre session Claude Code charge réellement</title>
-<meta name="description" content="Plugin Claude Code sans dépendance qui audite le prompt système : plugins, serveurs MCP, skills, agents, hooks — avec décompte octets/tokens et réglage en un clic.">
+<title>pms-inspector — Voyez ce que votre session Claude Code charge réellement</title>
+<meta name="description" content="Plugin Claude Code sans dépendance qui audite le system prompt : plugins, serveurs MCP, skills, agents, hooks — avec le calcul octets / tokens et un réglage en un clic.">
+<meta property="og:title" content="pms-inspector — Voyez ce que votre session Claude Code charge réellement">
+<meta property="og:description" content="Plugin Claude Code sans dépendance qui audite le system prompt, avec calcul octets / tokens et réglage en un clic.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://alwinlin23.github.io/pms-inspector/fr.html">
 <link rel="canonical" href="https://alwinlin23.github.io/pms-inspector/fr.html">
 <link rel="alternate" hreflang="en" href="https://alwinlin23.github.io/pms-inspector/">
 <link rel="alternate" hreflang="zh-CN" href="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
@@ -15,183 +31,240 @@
 <link rel="alternate" hreflang="de" href="https://alwinlin23.github.io/pms-inspector/de.html">
 <link rel="alternate" hreflang="es" href="https://alwinlin23.github.io/pms-inspector/es.html">
 <link rel="alternate" hreflang="x-default" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext x='50%25' y='50%25' font-size='52' text-anchor='middle' dominant-baseline='central'%3E%F0%9F%94%8D%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<div class="wrap">
 
-<nav class="lang-switcher" aria-label="Langue">
-  <details>
-    <summary aria-label="Langue">
-      <span class="flag">🇫🇷</span>
-      <span class="label">Français</span>
-      <span class="caret">▼</span>
-    </summary>
-    <ul class="menu">
-      <li><a href="./index.html" hreflang="en"><span class="flag">🇺🇸</span> English</a></li>
-      <li><a href="./zh-CN.html" hreflang="zh-CN"><span class="flag">🇨🇳</span> 简体中文</a></li>
-      <li><a href="./zh-TW.html" hreflang="zh-TW"><span class="flag">🇹🇼</span> 繁體中文</a></li>
-      <li><a href="./ja.html" hreflang="ja"><span class="flag">🇯🇵</span> 日本語</a></li>
-      <li><a href="./ko.html" hreflang="ko"><span class="flag">🇰🇷</span> 한국어</a></li>
-      <li><span class="current"><span class="flag">🇫🇷</span> Français</span></li>
-      <li><a href="./de.html" hreflang="de"><span class="flag">🇩🇪</span> Deutsch</a></li>
-      <li><a href="./es.html" hreflang="es"><span class="flag">🇪🇸</span> Español</a></li>
-    </ul>
-  </details>
+<nav class="nav" aria-label="Primary">
+  <div class="nav-inner">
+    <a class="brand-mark" href="./">pms&#8209;inspector</a>
+    <a class="nav-link" href="#how">Fonctionnement</a>
+    <a class="nav-link" href="#signature">Quatre états</a>
+    <a class="nav-link" href="#before-after">Avant / après</a>
+    <a class="nav-link" href="#tune">Réglages</a>
+    <div class="nav-right">
+      <a class="nav-link" href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">GitHub ↗</a>
+      <div class="lang" id="lang">
+        <button class="lang-btn" aria-haspopup="listbox" aria-expanded="false">
+          <span aria-hidden="true">🇫🇷</span><span>Français</span><span aria-hidden="true">▾</span>
+        </button>
+        <div class="lang-menu" role="listbox">
+          <a href="./" hreflang="en"><span aria-hidden="true">🇺🇸</span> English</a>
+          <a href="./zh-CN.html" hreflang="zh-CN"><span aria-hidden="true">🇨🇳</span> 简体中文</a>
+          <a href="./zh-TW.html" hreflang="zh-TW"><span aria-hidden="true">🇨🇳</span> 繁體中文</a>
+          <a href="./ja.html" hreflang="ja"><span aria-hidden="true">🇯🇵</span> 日本語</a>
+          <a href="./ko.html" hreflang="ko"><span aria-hidden="true">🇰🇷</span> 한국어</a>
+          <a class="current" href="./fr.html"><span aria-hidden="true">🇫🇷</span> Français</a>
+          <a href="./de.html" hreflang="de"><span aria-hidden="true">🇩🇪</span> Deutsch</a>
+          <a href="./es.html" hreflang="es"><span aria-hidden="true">🇪🇸</span> Español</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </nav>
 
-<header class="hero">
-  <h1>pms-inspector</h1>
-  <p class="tag"><strong>P/M/S</strong> = Plugin / MCP / Skill Inspector (Inspecteur de plugins / MCP / skills).</p>
-  <p class="lede">
-    Un plugin Claude Code sans dépendance qui vous montre exactement ce que votre
-    session injecte dans le prompt système — chaque plugin activé, serveur MCP,
-    skill, agent et hook — avec le décompte en octets et tokens, ainsi que des
-    recommandations de réglage applicables en un clic.
-  </p>
-  <div class="cta-row">
-    <a class="btn primary" href="https://github.com/alwinlin23/pms-inspector">Voir sur GitHub →</a>
-    <a class="btn" href="#install">Installation</a>
-    <a class="btn" href="#example">Voir un exemple</a>
+<section class="band">
+  <div class="inner">
+    <div class="hero">
+      <div class="hero-copy">
+        <p class="kicker">Inspecteur Plugin · MCP · Skill</p>
+        <h1 class="h-display">Voyez ce que votre session charge <em>réellement</em>.</h1>
+        <p class="lede">Un plugin Claude Code sans dépendance qui lit votre configuration sur disque et calcule les octets / tokens pour chaque plugin, serveur MCP, skill, agent et hook — plus le réglage qui décide si une configuration de 300 skills coûte <strong>2k</strong> ou <strong>20k</strong> tokens par tour.</p>
+        <div class="hero-cta">
+          <a class="btn" href="#install">Installer →</a>
+          <a class="btn btn--ghost" href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">Source</a>
+        </div>
+      </div>
+
+      <div class="term" aria-label="pms-inspector sample output">
+        <div class="term-chrome" aria-hidden="true">
+          <span class="term-dot" style="background:#ff5f57"></span>
+          <span class="term-dot" style="background:#febc2e"></span>
+          <span class="term-dot" style="background:#28c840"></span>
+          <span class="term-title">/pms-inspector</span>
+        </div>
+<pre class="term-body"><span class="comment">╭────────────────────────────────────────────────────────────╮</span>
+<span class="comment">│</span>  <b>P/M/S Inspector</b> · what this session loads
+<span class="comment">╰────────────────────────────────────────────────────────────╯</span>
+
+<span class="prompt">context   </span>  200 000 tokens window · budget 0.01 (default)
+<span class="prompt">plugins   </span>  <b>12</b> enabled           ~ 84 KB
+<span class="prompt">mcp       </span>  <b>7</b> servers            ~ 41 KB
+<span class="prompt">skills    </span>  <b>318</b> discovered
+<span class="prompt">agents    </span>  <b>62</b>                  ~ 22 KB
+<span class="prompt">hooks     </span>  <b>9</b>                   ~  3 KB
+
+skill listing state ─────────────────────────────────────────
+  <span class="ok">full           </span>      0
+  <span class="warn">desc-truncated </span>      0
+  <span class="warn">budget-comp.   </span>      0
+  <span class="bad">name-only      </span>    <b>318</b>   ← <span class="bad">100 %</span>
+
+<span class="warn">⚠  skillListingBudgetFraction = 0.01</span>
+   le texte de description est supprimé pour chaque skill.
+
+<span class="accent">suggéré : monter à 0,15 → ~18,9 k tokens (9,4 % de la fenêtre)</span>
+</pre>
+      </div>
+    </div>
   </div>
-</header>
+</section>
 
-<h2 id="why">Pourquoi vous en avez besoin</h2>
-<p>
-  Claude Code charge automatiquement chaque skill de chaque plugin activé. Sur une
-  configuration chargée (par ex. <code>ecc</code> + <code>claude-mem</code>, ~300 skills sur disque),
-  la valeur par défaut <code>skillListingBudgetFraction: 0.01</code> compresse silencieusement
-  les descriptions de skills <em>jusqu'au nom seul</em>, et vous n'avez aucun moyen de le voir.
-  Votre modèle choisit le mauvais skill et vous n'en connaissez pas la raison.
-</p>
-<p><code>/pms-inspector</code> vous indique :</p>
-<ul>
-  <li>Le nombre de plugins / serveurs MCP / skills / agents / hooks activés.</li>
-  <li>Combien d'octets et de tokens chaque catégorie consomme.</li>
-  <li>L'état de chargement par skill, en quatre catégories (voir ci-dessous).</li>
-  <li>Quel pourcentage de la fenêtre de contexte la liste des skills consomme.</li>
-  <li>Quel levier actionner pour résoudre — applicable en un clic.</li>
-</ul>
-<blockquote>
-  Ce n'est <strong>pas</strong> un remplacement de <code>/context</code>. <code>/context</code>
-  affiche l'état <em>runtime</em> (ce qui est dans la conversation actuelle).
-  <code>/pms-inspector</code> lit votre configuration sur disque et prédit ce que la
-  <em>prochaine</em> session chargera.
-</blockquote>
+<section class="band band--tint" id="how">
+  <div class="inner">
+    <p class="eyebrow">01 · Fonctionnement</p>
+    <h2 class="h-section">Un audit statique du disque, avant le prochain tour.</h2>
+    <p class="body-p" style="max-width:720px"><code>/context</code> montre la conversation en cours. <code>/pms-inspector</code> lit votre configuration <code>~/.claude/</code> et prédit ce que la <em>prochaine</em> session chargera — pas d'appel LLM, pas d'écriture, pas de réseau.</p>
 
-<h2 id="states">Quatre états de chargement</h2>
-<p>Chaque skill sur disque tombe dans l'une de ces catégories :</p>
-<div class="states">
-  <div class="state full">
-    <span class="badge">full</span>
-    <p>Description intacte. Le modèle peut sélectionner le skill à partir de sa description.</p>
+    <ol class="method" style="list-style:none;padding:0">
+      <li class="method-step"><p class="n">1</p><h4>Découvrir</h4><p>Parcourir <code>enabledPlugins</code> et chaque serveur MCP, skill, agent et hook du disque.</p></li>
+      <li class="method-step"><p class="n">2</p><h4>Mesurer</h4><p>Compter les octets du frontmatter + description ; convertir à 4 caractères ≈ 1 token.</p></li>
+      <li class="method-step"><p class="n">3</p><h4>Classer</h4><p>Appliquer <code>skillListingBudgetFraction</code> et <code>skillListingMaxDescChars</code>. Quatre états, sans flou.</p></li>
+      <li class="method-step"><p class="n">4</p><h4>Rapporter</h4><p>Tableaux alignés pour l'humain (largeurs CJK conscientes) ou <code>--json</code> pour vos pipelines.</p></li>
+      <li class="method-step"><p class="n">5</p><h4>Suggérer</h4><p>Valeurs concrètes des réglages avec deltas de tokens — à copier-coller dans <code>settings.json</code>.</p></li>
+    </ol>
   </div>
-  <div class="state trunc">
-    <span class="badge">desc-truncated</span>
-    <p>Tronquée par <code>skillListingMaxDescChars</code>. Lisible mais la fin est coupée.</p>
+</section>
+
+<section class="band" id="signature">
+  <div class="inner">
+    <p class="eyebrow">02 · Les quatre états de chargement</p>
+    <h2 class="h-section">Chaque skill tombe dans exactement un carré.</h2>
+    <p class="body-p" style="max-width:720px">Chaque carré est une puce style Pantone parce que <em>PMS</em> désigne aussi le Pantone Matching System — et tout ce que cet outil fait, c'est appairer ce que vous <em>publiez</em> avec ce qui est effectivement <em>chargé</em>.</p>
+
+    <div class="swatches">
+      <article class="pms-swatch pms-swatch--full">
+        <div class="pms-chip"><span class="pms-code">PMS 5773 C</span><span class="pms-state">FULL</span></div>
+        <p class="pms-desc">La description atteint le modèle intacte — l'état idéal pour un skill que vous voulez vraiment voir déclenché.</p>
+      </article>
+      <article class="pms-swatch pms-swatch--trunc">
+        <div class="pms-chip"><span class="pms-code">PMS 138 C</span><span class="pms-state">DESC-TRUNCATED</span></div>
+        <p class="pms-desc">Plafonnée par <code>skillListingMaxDescChars</code> (défaut 1536). La fin est coupée en silence.</p>
+      </article>
+      <article class="pms-swatch pms-swatch--comp">
+        <div class="pms-chip"><span class="pms-code">PMS 165 C</span><span class="pms-state">BUDGET-COMPRESSED</span></div>
+        <p class="pms-desc">Compressée par le <code>skillListingBudgetFraction</code> global. Le texte reste, mais plus court que le fichier.</p>
+      </article>
+      <article class="pms-swatch pms-swatch--name">
+        <div class="pms-chip"><span class="pms-code">PMS 179 C</span><span class="pms-state">NAME-ONLY</span></div>
+        <p class="pms-desc">Description totalement supprimée — le modèle ne voit que le slug et ne peut pas raisonner sur quand l'invoquer.</p>
+      </article>
+    </div>
   </div>
-  <div class="state comp">
-    <span class="badge">budget-compressed</span>
-    <p>Compressée par le paramètre global <code>skillListingBudgetFraction</code>. Raccourcie pour tenir dans le budget.</p>
+</section>
+
+<section class="band band--tint" id="before-after">
+  <div class="inner">
+    <p class="eyebrow">03 · Cas de référence · 318 skills · fenêtre 200 k</p>
+    <h2 class="h-section">Deux réglages. Environ 17 k tokens entre les deux.</h2>
+
+    <div class="two-cost">
+      <div class="cost">
+        <h4>Avant — budget par défaut 0,01</h4>
+        <p class="big">318&nbsp;/&nbsp;318 <em>name-only</em></p>
+        <p>~2 000 tokens dépensés, mais le modèle ignore pourquoi chaque skill existe. La moitié de vos invocations manque.</p>
+      </div>
+      <div class="cost">
+        <h4>Après — budget monté à 0,15</h4>
+        <p class="big">318&nbsp;/&nbsp;318 <em>full</em></p>
+        <p>~18 900 tokens (9,4 % de la fenêtre). La phrase-déclencheur de chaque skill atteint le modèle. Les invocations commencent à tomber juste.</p>
+      </div>
+    </div>
+
+    <div class="two-cost" style="margin-top:32px">
+      <div class="term" aria-label="Avant — budget par défaut 0,01">
+        <div class="term-chrome"><span class="term-title">before · fraction 0.01</span></div>
+<pre class="term-body"><span class="prompt">skills   </span>  318 discovered
+  <span class="bad">name-only    </span>  <b>318</b>   ← <span class="bad">100 %</span>
+  <span class="ok">full         </span>    0
+
+<span class="warn">model sees:</span>  <span class="comment">318 slugs, zero context</span>
+<span class="warn">est. cost:</span>   ~ 2.0 k tokens/turn
+</pre>
+      </div>
+      <div class="term" aria-label="Après — budget monté à 0,15">
+        <div class="term-chrome"><span class="term-title">after · fraction 0.15</span></div>
+<pre class="term-body"><span class="prompt">skills   </span>  318 discovered
+  <span class="ok">full         </span>  <b>318</b>   ← <span class="ok">100 %</span>
+  <span class="bad">name-only    </span>    0
+
+<span class="ok">model sees:</span>  <span class="comment">318 slugs + full descriptions</span>
+<span class="accent">est. cost:</span>  ~ 18.9 k tokens/turn  (9.4 % of window)
+</pre>
+      </div>
+    </div>
   </div>
-  <div class="state name">
-    <span class="badge">name-only</span>
-    <p>Description entièrement supprimée. Le modèle ne voit qu'un slug comme <code>opensource-forker</code> — souvent insuffisant pour choisir.</p>
+</section>
+
+<section class="band" id="tune">
+  <div class="inner">
+    <p class="eyebrow">04 · Ce que l'outil inspecte vraiment</p>
+    <h2 class="h-section">Trois réglages. Quatre états. Une vérité.</h2>
+
+    <dl class="kv">
+      <dt><code>skillListingBudgetFraction</code></dt>
+      <dd>Fraction de la fenêtre de contexte que Claude Code réserve aux descriptions de skills. Défaut <code>0.01</code>. Sur une configuration chargée, c'est le seul réglage qui fait basculer tout le monde en <code>name-only</code>.</dd>
+
+      <dt><code>skillListingMaxDescChars</code></dt>
+      <dd>Plafond dur par description avant qu'elle soit marquée <code>desc-truncated</code>. Défaut <code>1536</code>. Rarement le goulot — c'est habituellement la fraction qui mord en premier.</dd>
+
+      <dt><code>--ctx &lt;tokens&gt;</code></dt>
+      <dd>Redéfinir la fenêtre de contexte supposée (défaut <code>200000</code>). Pratique pour modéliser Haiku ou un tier plus ancien.</dd>
+
+      <dt><code>--json</code></dt>
+      <dd>Sortie parsable par machine. Les quatre états, comptes octets / tokens, détail par skill — à brancher sur ce que vous utilisez déjà.</dd>
+
+      <dt><code>--verbose</code></dt>
+      <dd>Détail par skill dans le rapport humain. Utile quand un skill pèse disproportionnellement lourd.</dd>
+
+      <dt><code>--lang &lt;code&gt;</code></dt>
+      <dd>Forcer la langue de sortie : <code>en · zh-CN · zh-TW · ja · ko · fr · de · es</code>. Sinon détectée depuis <code>settings.json</code>.</dd>
+    </dl>
   </div>
-</div>
+</section>
 
-<h2 id="install">Installation</h2>
-<p>Ajoutez le marketplace et installez le plugin :</p>
-<pre><code>/plugin marketplace add https://github.com/alwinlin23/pms-inspector
-/plugin install pms-inspector@pms-inspector</code></pre>
+<section class="band band--dark" id="install">
+  <div class="inner">
+    <div class="cta-band">
+      <div class="cta-copy">
+        <p class="eyebrow">Passer à l'action</p>
+        <h2 class="h-section">Installez en tant que plugin Claude Code.</h2>
+        <p class="lede">Une entrée marketplace, une commande, zéro dépendance npm. Fonctionne sur Node — le runtime que Claude Code embarque déjà.</p>
+        <div class="hero-cta">
+          <a class="btn" href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">GitHub ↗</a>
+          <a class="btn btn--ghost" href="#how">Fonctionnement</a>
+        </div>
+      </div>
+<pre class="cta-code"><span class="comment"># dans une session Claude Code</span>
+<span class="prompt">/plugin marketplace add</span> alwinlin/pms-inspector
+<span class="prompt">/plugin install</span> pms-inspector@pms-inspector
+<span class="prompt">/pms-inspector</span>
+</pre>
+    </div>
+  </div>
+</section>
 
-<p>Puis, dans une nouvelle session Claude Code :</p>
-<pre><code>/pms-inspector</code></pre>
-
-<h2 id="usage">Utilisation</h2>
-<pre><code>/pms-inspector                    # Résumé lisible (langue auto-détectée)
-/pms-inspector --json             # JSON exploitable par machine
-/pms-inspector --ctx 200000       # Remplacer la fenêtre de contexte supposée
-/pms-inspector --verbose          # Détail par skill
-/pms-inspector --lang fr          # Forcer la langue d'affichage
-/pms-inspector --apply &lt;plan-id&gt;  # Appliquer un plan de réglage suggéré</code></pre>
-
-<h2 id="tuning">Réglage interactif</h2>
-<p>
-  Lorsque le rapport détecte que le budget est en <strong>débordement</strong>
-  (certains skills tombent en name-only) ou clairement <strong>surdimensionné</strong>
-  (budget plus de deux fois supérieur au nécessaire), Claude Code ouvre une fenêtre
-  de choix listant les plans de réglage concrets calculés par le script. Sélectionner
-  l'un d'eux relance le script avec <code>--apply &lt;plan-id&gt;</code>, qui écrit
-  <strong>une seule clé</strong> dans <code>~/.claude/settings.json</code>.
-</p>
-<ul>
-  <li>Une sauvegarde automatique <code>.bak.&lt;horodatage ISO&gt;</code> est créée avant chaque écriture.</li>
-  <li><code>ANTHROPIC_AUTH_TOKEN</code> et tous les autres paramètres restent intouchés.</li>
-  <li>Les changements prennent effet au <strong>prochain</strong> lancement de Claude Code — le prompt système est assemblé au démarrage, pas à chaque tour.</li>
-</ul>
-
-<h2 id="example">Exemple de sortie</h2>
-<p>Exécution de <code>/pms-inspector</code> sur une machine avec ~300 skills, budget ajusté :</p>
-<pre><code>═══ Inspecteur de contexte Claude Code ═══
-Langue : fr (surchargez avec --lang, par ex. --lang en)
-
-Défini dans : ~/.claude/settings.json
-  fenêtre de contexte : 200,000 tokens (~800,000 caractères)
-  skillListingBudgetFraction = 0.099
-     ↳ fraction du ctx réservée à la liste des skills (paramètre CC ; défaut 0.01)
-     ↳ budget 79,200 caractères (9.90% du ctx)
-  skillListingMaxDescChars = 1536
-     ↳ limite de caractères de description par skill (paramètre CC ; défaut 1536)
-  plugins activés : claude-mem, ecc, andrej-karpathy-skills, pms-inspector
-
-┌─ Vue d'ensemble ─────────────────────────────────────────────────┐
-│ Skills :  295   Agents :   67   MCP :   2   Hooks :    2         │
-└──────────────────────────────────────────────────────────────────┘
-
-┌─ Budget caractères liste skills ─────────────────────────────────┐
-│ Complet (name+desc, non coupé)    18,807 tokens / 75,228 caract. │
-│ Après per-cap (≤1536/skill)       18,807 tokens / 75,228 caract. │
-│ Budget (0.099 × ctx)              19,800 tokens / 79,200 caract. │
-│ Injecté finalement                18,807 tokens / 75,228 caract. │
-│ Pourcentage de la fenêtre ctx                              9.40% │
-└──────────────────────────────────────────────────────────────────┘
-
-┌─ État de chargement des descriptions ────────────────────────────┐
-│ ✅ Complet                             295 (100.00%) ==========  │
-│ ✂  Tronqué par MaxDescChars              0 (  0.00%)             │
-│ ⚠  Compressé par BudgetFraction          0 (  0.00%)             │
-│ ❌ Nom seul                              0 (  0.00%)             │
-│ ·  Sans description                      0 (  0.00%)             │
-└──────────────────────────────────────────────────────────────────┘</code></pre>
-
-<h2 id="i18n">8 langues, prêt à l'emploi</h2>
-<p>
-  <code>pms-inspector</code> parle
-  <strong>en, zh-CN, zh-TW, ja, ko, fr, de, es</strong>. La langue d'affichage est
-  auto-détectée dans cet ordre :
-</p>
-<ol>
-  <li>Flag CLI <code>--lang &lt;code&gt;</code></li>
-  <li>Champ <code>language</code> dans <code>~/.claude/settings.json</code> (accepte aussi les noms locaux comme <code>"简体中文"</code>, <code>"日本語"</code>, <code>"français"</code>)</li>
-  <li>Variables d'environnement <code>$LC_ALL</code> / <code>$LANG</code> / <code>$LANGUAGE</code></li>
-  <li>Repli sur <code>en</code></li>
-</ol>
-
-<h2 id="safety">Sécurité</h2>
-<ul>
-  <li>L'invocation par défaut est en lecture seule. <code>--apply &lt;plan-id&gt;</code> est le <strong>seul</strong> chemin de code qui écrit quelque part, et il ne modifie qu'une seule clé cible dans <code>~/.claude/settings.json</code> (<code>skillListingBudgetFraction</code>, <code>skillListingMaxDescChars</code>, ou une entrée d'<code>enabledPlugins</code>). Un cliché <code>.bak.&lt;horodatage ISO&gt;</code> est écrit avant chaque modification.</li>
-  <li>Ne lit pas votre <code>ANTHROPIC_AUTH_TOKEN</code> ni aucun champ d'authentification — seulement les clés pertinentes au chargement.</li>
-  <li>Zéro dépendance npm. Uniquement les modules intégrés Node 18+ (<code>fs</code>, <code>path</code>, <code>os</code>).</li>
-  <li>Multi-plateforme (macOS, Linux, Windows).</li>
-</ul>
-
-<footer>
-  <p>
-    Sous licence MIT · <a href="https://github.com/alwinlin23/pms-inspector">github.com/alwinlin23/pms-inspector</a>
-  </p>
+<footer class="foot">
+  <div class="foot-inner">
+    <span>© pms-inspector · MIT · zéro dépendance npm</span>
+    <span class="foot-right">
+      <a href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">GitHub</a> ·
+      <a href="https://claude.com/product/claude-code" target="_blank" rel="noopener">Claude Code</a>
+    </span>
+  </div>
 </footer>
 
-</div>
+<script>
+document.addEventListener('click', function (e) {
+  document.querySelectorAll('.lang').forEach(function (el) {
+    var inside = el.contains(e.target);
+    var onBtn  = e.target.closest && e.target.closest('.lang-btn');
+    if (inside && onBtn) { el.classList.toggle('open'); }
+    else if (!inside)    { el.classList.remove('open'); }
+  });
+});
+</script>
+
 </body>
 </html>

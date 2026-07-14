@@ -1,0 +1,562 @@
+{
+  "$comment": "docs/_i18n.json — 8-language string table for docs/_template.html. Rendered by docs/_build.mjs. Same keyset across all 8 langs; missing keys inside a lang fall back to en (see _build.mjs). Values may contain HTML — the renderer does not escape.",
+
+  "en": {
+    "htmlLang": "en",
+    "langName": "English",
+    "langFlag": "🇺🇸",
+    "canonicalUrl": "https://alwinlin23.github.io/pms-inspector/",
+    "meta": {
+      "title": "pms-inspector — See what your Claude Code session actually loads",
+      "description": "Zero-dependency Claude Code plugin that audits the system prompt: plugins, MCP servers, skills, agents, hooks — with byte/token math and one-click tuning."
+    },
+    "og": {
+      "title": "pms-inspector — See what your Claude Code session actually loads",
+      "description": "Zero-dependency Claude Code plugin that audits the system prompt with byte/token math and one-click tuning."
+    },
+    "nav": {
+      "how": "How it works",
+      "states": "Load states",
+      "beforeAfter": "Before / after",
+      "tune": "Knobs",
+      "github": "GitHub ↗"
+    },
+    "hero": {
+      "kicker": "Plugin · MCP · Skill inspector",
+      "titleHtml": "See what your session <em>actually</em> loads.",
+      "ledeHtml": "A zero-dependency Claude Code plugin that reads your on-disk config and reports byte/token math for every plugin, MCP server, skill, agent, and hook — plus the one knob that decides whether a 300-skill setup costs <strong>2k</strong> or <strong>20k</strong> tokens per turn.",
+      "installBtn": "Install →",
+      "sourceBtn": "Source"
+    },
+    "term": {
+      "hero": {
+        "warn2": "description text is dropped for every skill.",
+        "suggest": "suggested: raise to 0.15 → ~18.9 k tokens (9.4 % of window)"
+      }
+    },
+    "how": {
+      "eyebrow": "01 · How it works",
+      "h2": "A static audit of the disk, before the next turn boots.",
+      "pHtml": "<code>/context</code> shows the current conversation. <code>/pms-inspector</code> reads your <code>~/.claude/</code> config and predicts what the <em>next</em> session will load — no LLM calls, no writes, no network.",
+      "step1": {"h4": "Discover", "pHtml": "Walk <code>enabledPlugins</code> and every MCP server, skill, agent, and hook on disk."},
+      "step2": {"h4": "Measure", "pHtml": "Count bytes for frontmatter + description; convert at 4 chars ≈ 1 token."},
+      "step3": {"h4": "Classify", "pHtml": "Apply <code>skillListingBudgetFraction</code> and <code>skillListingMaxDescChars</code>. Four states, no fuzz."},
+      "step4": {"h4": "Report", "pHtml": "Human-aligned tables (CJK-aware widths) or <code>--json</code> for pipelines."},
+      "step5": {"h4": "Suggest", "pHtml": "Concrete knob values with token deltas — copy-paste into <code>settings.json</code>."}
+    },
+    "sig": {
+      "eyebrow": "02 · The four load states",
+      "h2": "Every skill lands in exactly one square.",
+      "pHtml": "Each square is a Pantone-style chip because <em>PMS</em> is also the Pantone Matching System — and this whole tool is about matching what you <em>shipped</em> against what actually got <em>loaded</em>.",
+      "full":     {"name": "FULL",              "desc": "Description reaches the model intact — the ideal state for a skill you actually want triggered."},
+      "trunc":    {"name": "DESC-TRUNCATED",    "descHtml": "Capped by <code>skillListingMaxDescChars</code> (default 1536). The tail is silently cut."},
+      "comp":     {"name": "BUDGET-COMPRESSED", "descHtml": "Squeezed by the global <code>skillListingBudgetFraction</code>. Text remains, but shorter than the file."},
+      "nameOnly": {"name": "NAME-ONLY",         "desc": "Description dropped entirely — the model sees only the slug and can’t reason about when to invoke it."}
+    },
+    "ba": {
+      "eyebrow": "03 · Reference case · 318 skills · 200 k window",
+      "h2": "Two settings. Roughly 17 k tokens between them.",
+      "before": {"h4": "Before — default budget 0.01", "bigHtml": "318&nbsp;/&nbsp;318 <em>name-only</em>", "p": "~2 000 tokens spent, but the model doesn’t know why any skill exists. Half your invocations miss."},
+      "after":  {"h4": "After — budget raised to 0.15", "bigHtml": "318&nbsp;/&nbsp;318 <em>full</em>",      "p": "~18 900 tokens (9.4 % of the window). Every skill’s trigger sentence reaches the model. Invocations start landing."}
+    },
+    "knobs": {
+      "eyebrow": "04 · What the tool actually inspects",
+      "h2": "Three knobs. Four states. One truth.",
+      "knob1": {"dd": "Fraction of the context window Claude Code reserves for skill descriptions. Default <code>0.01</code>. On a busy setup this is the single knob that flips everything to <code>name-only</code>."},
+      "knob2": {"dd": "Hard cap per description before it’s marked <code>desc-truncated</code>. Default <code>1536</code>. Rarely the bottleneck — usually the fraction bites first."},
+      "knob3": {"dd": "Override the assumed context window (default <code>200000</code>). Handy when you’re modelling Haiku or an older tier."},
+      "knob4": {"dd": "Machine-parseable output. All four load states, byte / token counts, and per-skill breakdown — pipe into whatever you already use."},
+      "knob5": {"dd": "Per-skill breakdown in the human report. Useful when one skill is disproportionately heavy."},
+      "knob6": {"dd": "Force output language: <code>en · zh-CN · zh-TW · ja · ko · fr · de · es</code>. Auto-detected from <code>settings.json</code> otherwise."}
+    },
+    "cta": {
+      "eyebrow": "Ship it",
+      "h2": "Install as a Claude Code plugin.",
+      "lede": "One marketplace entry, one command, zero npm dependencies. Runs on Node — the runtime Claude Code already ships with.",
+      "githubBtn": "GitHub ↗",
+      "howBtn": "How it works",
+      "codeComment": "in a Claude Code session"
+    },
+    "foot": {
+      "copy": "© pms-inspector · MIT · zero npm dependencies",
+      "githubLink": "GitHub",
+      "ccLink": "Claude Code"
+    }
+  },
+
+  "zh-CN": {
+    "htmlLang": "zh-CN",
+    "langName": "简体中文",
+    "langFlag": "🇨🇳",
+    "canonicalUrl": "https://alwinlin23.github.io/pms-inspector/zh-CN.html",
+    "meta": {
+      "title": "pms-inspector — 看清你的 Claude Code 会话到底加载了什么",
+      "description": "零依赖的 Claude Code 插件，静态审计系统提示：plugins、MCP、skills、agents、hooks —— 附带字节 / token 计算与一键调优建议。"
+    },
+    "og": {
+      "title": "pms-inspector — 看清你的 Claude Code 会话到底加载了什么",
+      "description": "零依赖的 Claude Code 插件，静态审计系统提示，附带字节 / token 计算与一键调优建议。"
+    },
+    "nav": {"how": "工作原理", "states": "四种状态", "beforeAfter": "调优前后", "tune": "参数", "github": "GitHub ↗"},
+    "hero": {
+      "kicker": "Plugin · MCP · Skill 检查器",
+      "titleHtml": "看清你的会话到底<em>加载了什么</em>。",
+      "ledeHtml": "一个零依赖的 Claude Code 插件，读取你磁盘上的配置，为每一个 plugin、MCP、skill、agent、hook 打印字节 / token 账本 —— 并告诉你哪一个参数决定了 300 个 skill 的开销是 <strong>2k</strong> 还是 <strong>20k</strong> tokens / turn。",
+      "installBtn": "安装 →",
+      "sourceBtn": "源码"
+    },
+    "term": {"hero": {"warn2": "所有 skill 的描述文本都被丢弃。", "suggest": "建议：调到 0.15 → 约 18.9k tokens（占上下文窗口 9.4%）"}},
+    "how": {
+      "eyebrow": "01 · 工作原理",
+      "h2": "在下一个 turn 开始前，先做一次磁盘静态审计。",
+      "pHtml": "<code>/context</code> 看的是当前会话。<code>/pms-inspector</code> 读你 <code>~/.claude/</code> 里的配置，预测<em>下一个</em>会话会加载什么 —— 不调 LLM、不写盘、不联网。",
+      "step1": {"h4": "发现", "pHtml": "遍历 <code>enabledPlugins</code> 与磁盘上的每一个 MCP、skill、agent、hook。"},
+      "step2": {"h4": "度量", "pHtml": "对 frontmatter + description 计字节，按 4 字符 ≈ 1 token 换算。"},
+      "step3": {"h4": "分类", "pHtml": "套用 <code>skillListingBudgetFraction</code> 与 <code>skillListingMaxDescChars</code>。四种状态，界限清晰。"},
+      "step4": {"h4": "报告", "pHtml": "人眼对齐的表格（含 CJK 视觉宽度）或 <code>--json</code> 供流水线使用。"},
+      "step5": {"h4": "建议", "pHtml": "给出具体的参数值 + token 差额 —— 复制粘贴进 <code>settings.json</code>。"}
+    },
+    "sig": {
+      "eyebrow": "02 · 四种加载状态",
+      "h2": "每一个 skill 都必然落进一格。",
+      "pHtml": "这四张色卡采用 Pantone 风格 —— 因为 <em>PMS</em> 恰好也是 Pantone Matching System。这个工具做的事，本质上就是把你<em>发布</em>的和真正被<em>加载</em>的做一次校色。",
+      "full":     {"name": "FULL",              "desc": "描述完整送达模型 —— 你希望被触发的 skill 就该在这一格。"},
+      "trunc":    {"name": "DESC-TRUNCATED",    "descHtml": "被 <code>skillListingMaxDescChars</code>（默认 1536）截断。末尾被静默切掉。"},
+      "comp":     {"name": "BUDGET-COMPRESSED", "descHtml": "被全局 <code>skillListingBudgetFraction</code> 挤压。文本还在，但比源文件短。"},
+      "nameOnly": {"name": "NAME-ONLY",         "desc": "描述被完全丢弃 —— 模型只看到 slug，无从判断何时该调用它。"}
+    },
+    "ba": {
+      "eyebrow": "03 · 参考案例 · 318 skills · 200k 窗口",
+      "h2": "两组参数。差距大约 17k tokens。",
+      "before": {"h4": "之前 —— 默认 budget 0.01", "bigHtml": "318&nbsp;/&nbsp;318 <em>name-only</em>", "p": "只花了约 2 000 tokens，但模型不知道任何 skill 存在的理由。一半调用打不中。"},
+      "after":  {"h4": "之后 —— budget 调到 0.15", "bigHtml": "318&nbsp;/&nbsp;318 <em>full</em>",      "p": "约 18 900 tokens（窗口的 9.4%）。每一个 skill 的触发描述都送达模型。调用开始命中。"}
+    },
+    "knobs": {
+      "eyebrow": "04 · 工具真正在看什么",
+      "h2": "三个旋钮。四种状态。一份真相。",
+      "knob1": {"dd": "Claude Code 为 skill 描述预留的上下文比例。默认 <code>0.01</code>。skill 一多，这个参数会让所有 skill 一起掉到 <code>name-only</code>。"},
+      "knob2": {"dd": "单条描述在被标记为 <code>desc-truncated</code> 前的硬上限。默认 <code>1536</code>。很少是瓶颈 —— 通常是 fraction 先咬到。"},
+      "knob3": {"dd": "覆盖假定的上下文窗口（默认 <code>200000</code>）。给 Haiku 或旧 tier 建模时用得上。"},
+      "knob4": {"dd": "机器可解析输出。四种加载状态、字节 / token 计数、每个 skill 明细 —— 直接进你的 pipeline。"},
+      "knob5": {"dd": "人类报告里附带每个 skill 的明细。适合排查某一个 skill 占用异常大的情况。"},
+      "knob6": {"dd": "强制输出语言：<code>en · zh-CN · zh-TW · ja · ko · fr · de · es</code>。不指定则从 <code>settings.json</code> 自动检测。"}
+    },
+    "cta": {
+      "eyebrow": "开始使用",
+      "h2": "作为 Claude Code 插件安装。",
+      "lede": "一份 marketplace 条目、一条命令、零 npm 依赖。跑在 Node 上 —— 也就是 Claude Code 自己已经带的 runtime。",
+      "githubBtn": "GitHub ↗",
+      "howBtn": "工作原理",
+      "codeComment": "在一个 Claude Code 会话里"
+    },
+    "foot": {"copy": "© pms-inspector · MIT · 零 npm 依赖", "githubLink": "GitHub", "ccLink": "Claude Code"}
+  },
+
+  "zh-TW": {
+    "htmlLang": "zh-TW",
+    "langName": "繁體中文",
+    "langFlag": "🇨🇳",
+    "canonicalUrl": "https://alwinlin23.github.io/pms-inspector/zh-TW.html",
+    "meta": {
+      "title": "pms-inspector — 看清你的 Claude Code 工作階段究竟載入了什麼",
+      "description": "零依賴的 Claude Code 外掛，靜態審計系統提示：plugins、MCP、skills、agents、hooks —— 附上位元組 / token 計算與一鍵調校建議。"
+    },
+    "og": {
+      "title": "pms-inspector — 看清你的 Claude Code 工作階段究竟載入了什麼",
+      "description": "零依賴的 Claude Code 外掛，靜態審計系統提示，附上位元組 / token 計算與一鍵調校建議。"
+    },
+    "nav": {"how": "運作原理", "states": "四種狀態", "beforeAfter": "調校前後", "tune": "參數", "github": "GitHub ↗"},
+    "hero": {
+      "kicker": "Plugin · MCP · Skill 檢查器",
+      "titleHtml": "看清你的工作階段究竟<em>載入了什麼</em>。",
+      "ledeHtml": "一個零依賴的 Claude Code 外掛，讀取你磁碟上的設定，為每一個 plugin、MCP、skill、agent、hook 列出位元組 / token 帳本 —— 並告訴你哪一個參數決定了 300 個 skill 的開銷是 <strong>2k</strong> 還是 <strong>20k</strong> tokens / turn。",
+      "installBtn": "安裝 →",
+      "sourceBtn": "原始碼"
+    },
+    "term": {"hero": {"warn2": "所有 skill 的描述文字都被丟棄。", "suggest": "建議：調到 0.15 → 約 18.9k tokens（佔上下文視窗 9.4%）"}},
+    "how": {
+      "eyebrow": "01 · 運作原理",
+      "h2": "在下一個 turn 開始之前，先做一次磁碟靜態審計。",
+      "pHtml": "<code>/context</code> 看的是目前工作階段。<code>/pms-inspector</code> 讀你 <code>~/.claude/</code> 裡的設定，預測<em>下一個</em>工作階段會載入什麼 —— 不呼叫 LLM、不寫磁碟、不連線。",
+      "step1": {"h4": "發現", "pHtml": "走訪 <code>enabledPlugins</code> 與磁碟上每一個 MCP、skill、agent、hook。"},
+      "step2": {"h4": "度量", "pHtml": "對 frontmatter + description 計位元組，按 4 字元 ≈ 1 token 換算。"},
+      "step3": {"h4": "分類", "pHtml": "套用 <code>skillListingBudgetFraction</code> 與 <code>skillListingMaxDescChars</code>。四種狀態，界線清楚。"},
+      "step4": {"h4": "報告", "pHtml": "人眼對齊的表格（含 CJK 視覺寬度）或 <code>--json</code> 供流水線使用。"},
+      "step5": {"h4": "建議", "pHtml": "給出具體的參數值 + token 差額 —— 複製貼上至 <code>settings.json</code>。"}
+    },
+    "sig": {
+      "eyebrow": "02 · 四種載入狀態",
+      "h2": "每一個 skill 都必然落到其中一格。",
+      "pHtml": "這四張色卡採用 Pantone 風格 —— 因為 <em>PMS</em> 剛好也是 Pantone Matching System。這個工具做的事，本質上就是把你<em>發布</em>的和真正被<em>載入</em>的做一次校色。",
+      "full":     {"name": "FULL",              "desc": "描述完整送達模型 —— 你希望被觸發的 skill 就該落在這一格。"},
+      "trunc":    {"name": "DESC-TRUNCATED",    "descHtml": "被 <code>skillListingMaxDescChars</code>（預設 1536）截斷。尾端被靜默切掉。"},
+      "comp":     {"name": "BUDGET-COMPRESSED", "descHtml": "被全域 <code>skillListingBudgetFraction</code> 擠壓。文字還在，但比原檔短。"},
+      "nameOnly": {"name": "NAME-ONLY",         "desc": "描述完全遭丟棄 —— 模型只看到 slug，無從判斷何時應該呼叫它。"}
+    },
+    "ba": {
+      "eyebrow": "03 · 參考案例 · 318 skills · 200k 視窗",
+      "h2": "兩組設定。差距大約 17k tokens。",
+      "before": {"h4": "之前 —— 預設 budget 0.01", "bigHtml": "318&nbsp;/&nbsp;318 <em>name-only</em>", "p": "只花了約 2 000 tokens，但模型不知道任何 skill 存在的理由。一半的呼叫都打不中。"},
+      "after":  {"h4": "之後 —— budget 調到 0.15", "bigHtml": "318&nbsp;/&nbsp;318 <em>full</em>",      "p": "約 18 900 tokens（視窗的 9.4%）。每一個 skill 的觸發描述都送達模型。呼叫開始命中。"}
+    },
+    "knobs": {
+      "eyebrow": "04 · 工具實際檢查的是什麼",
+      "h2": "三個旋鈕。四種狀態。一份真相。",
+      "knob1": {"dd": "Claude Code 為 skill 描述保留的上下文比例。預設 <code>0.01</code>。skill 一多，這個參數會讓所有 skill 一起掉到 <code>name-only</code>。"},
+      "knob2": {"dd": "單條描述在被標記為 <code>desc-truncated</code> 之前的硬上限。預設 <code>1536</code>。很少是瓶頸 —— 通常是 fraction 先咬到。"},
+      "knob3": {"dd": "覆寫假定的上下文視窗（預設 <code>200000</code>）。給 Haiku 或舊 tier 建模時用得上。"},
+      "knob4": {"dd": "機器可解析輸出。四種載入狀態、位元組 / token 計數、每個 skill 明細 —— 直接進你的 pipeline。"},
+      "knob5": {"dd": "人類報告裡附帶每個 skill 的明細。適合排查某一個 skill 佔用異常大的情況。"},
+      "knob6": {"dd": "強制輸出語言：<code>en · zh-CN · zh-TW · ja · ko · fr · de · es</code>。不指定則從 <code>settings.json</code> 自動偵測。"}
+    },
+    "cta": {
+      "eyebrow": "開始使用",
+      "h2": "作為 Claude Code 外掛安裝。",
+      "lede": "一份 marketplace 條目、一條命令、零 npm 依賴。跑在 Node 上 —— 也就是 Claude Code 自己已經帶的 runtime。",
+      "githubBtn": "GitHub ↗",
+      "howBtn": "運作原理",
+      "codeComment": "在一個 Claude Code 工作階段裡"
+    },
+    "foot": {"copy": "© pms-inspector · MIT · 零 npm 依賴", "githubLink": "GitHub", "ccLink": "Claude Code"}
+  },
+
+  "ja": {
+    "htmlLang": "ja",
+    "langName": "日本語",
+    "langFlag": "🇯🇵",
+    "canonicalUrl": "https://alwinlin23.github.io/pms-inspector/ja.html",
+    "meta": {
+      "title": "pms-inspector — Claude Code セッションが実際に読み込むものを可視化",
+      "description": "システムプロンプトを静的に監査するゼロ依存の Claude Code プラグイン：plugins / MCP / skills / agents / hooks を、バイト・トークン計算とワンクリック調整案付きで表示。"
+    },
+    "og": {
+      "title": "pms-inspector — Claude Code セッションが実際に読み込むものを可視化",
+      "description": "システムプロンプトを静的に監査するゼロ依存の Claude Code プラグイン。バイト / トークン計算とワンクリック調整案付き。"
+    },
+    "nav": {"how": "しくみ", "states": "4つの状態", "beforeAfter": "前後比較", "tune": "つまみ", "github": "GitHub ↗"},
+    "hero": {
+      "kicker": "Plugin · MCP · Skill インスペクタ",
+      "titleHtml": "セッションが<em>実際に</em>読み込むものを見る。",
+      "ledeHtml": "ゼロ依存の Claude Code プラグイン。ディスク上の設定を読み、plugin / MCP / skill / agent / hook それぞれのバイト・トークン量を表示 —— さらに、skill 300 個の構成で 1 ターンあたり <strong>2k</strong> か <strong>20k</strong> トークンかを決める、あの 1 つのつまみも。",
+      "installBtn": "インストール →",
+      "sourceBtn": "ソース"
+    },
+    "term": {"hero": {"warn2": "すべての skill の description が破棄されます。", "suggest": "提案: 0.15 に上げる → 約 18.9k トークン (ウィンドウの 9.4%)"}},
+    "how": {
+      "eyebrow": "01 · しくみ",
+      "h2": "次のターンが起動する前に、ディスクを静的に監査する。",
+      "pHtml": "<code>/context</code> は現在の会話を見せる。<code>/pms-inspector</code> は <code>~/.claude/</code> の設定を読み、<em>次の</em>セッションが何を読み込むかを予測する —— LLM 呼び出しなし、書き込みなし、ネットワークなし。",
+      "step1": {"h4": "検出", "pHtml": "<code>enabledPlugins</code> とディスク上のすべての MCP / skill / agent / hook を走査。"},
+      "step2": {"h4": "計測", "pHtml": "frontmatter + description のバイトを数え、4 文字 ≒ 1 トークンで換算。"},
+      "step3": {"h4": "分類", "pHtml": "<code>skillListingBudgetFraction</code> と <code>skillListingMaxDescChars</code> を適用。4 状態、あいまいなし。"},
+      "step4": {"h4": "レポート", "pHtml": "人間向けの整列テーブル (CJK 幅対応)、またはパイプライン向けの <code>--json</code>。"},
+      "step5": {"h4": "提案", "pHtml": "具体的なつまみの値とトークン差分 —— そのまま <code>settings.json</code> に貼れる。"}
+    },
+    "sig": {
+      "eyebrow": "02 · 4つの読み込み状態",
+      "h2": "すべての skill は必ず 1 マスに落ちる。",
+      "pHtml": "各マスは Pantone 風のチップ —— <em>PMS</em> は Pantone Matching System でもあり、このツールがやっているのは、あなたが<em>公開したもの</em>と実際に<em>読み込まれたもの</em>のカラーマッチングだから。",
+      "full":     {"name": "FULL",              "desc": "description がモデルに完全に届く —— トリガーさせたい skill が本来居るべき状態。"},
+      "trunc":    {"name": "DESC-TRUNCATED",    "descHtml": "<code>skillListingMaxDescChars</code> (既定 1536) で頭打ち。末尾が黙って切られる。"},
+      "comp":     {"name": "BUDGET-COMPRESSED", "descHtml": "グローバルな <code>skillListingBudgetFraction</code> に圧縮される。テキストは残るが、原文より短い。"},
+      "nameOnly": {"name": "NAME-ONLY",         "desc": "description が完全に落ちる —— モデルには slug しか見えず、いつ呼ぶべきかを判断できない。"}
+    },
+    "ba": {
+      "eyebrow": "03 · リファレンスケース · 318 skills · 200k ウィンドウ",
+      "h2": "設定 2 種。差はおよそ 17k トークン。",
+      "before": {"h4": "調整前 —— 既定 budget 0.01", "bigHtml": "318&nbsp;/&nbsp;318 <em>name-only</em>", "p": "約 2 000 トークン消費。だがモデルはどの skill も存在理由を知らない。呼び出しは半分外す。"},
+      "after":  {"h4": "調整後 —— budget を 0.15 に", "bigHtml": "318&nbsp;/&nbsp;318 <em>full</em>",      "p": "約 18 900 トークン (ウィンドウの 9.4%)。すべての skill のトリガー説明がモデルに届く。呼び出しが当たり始める。"}
+    },
+    "knobs": {
+      "eyebrow": "04 · このツールが実際に見るもの",
+      "h2": "つまみ 3 つ。状態 4 つ。真実 1 つ。",
+      "knob1": {"dd": "Claude Code が skill の description に確保するコンテキスト割合。既定は <code>0.01</code>。skill が多いと、これ 1 つで全 skill が <code>name-only</code> に落ちる。"},
+      "knob2": {"dd": "<code>desc-truncated</code> と印される前の 1 description あたりの上限。既定 <code>1536</code>。ボトルネックになることは少ない —— 通常は fraction のほうが先に噛む。"},
+      "knob3": {"dd": "想定するコンテキストウィンドウを上書き (既定 <code>200000</code>)。Haiku や古い層をモデリングするときに便利。"},
+      "knob4": {"dd": "機械可読出力。4 つの読み込み状態、バイト / トークン数、skill ごとの内訳 —— そのままパイプラインに投げられる。"},
+      "knob5": {"dd": "人間向けレポートに skill ごとの内訳を追加。特定の skill が突出して重いときに便利。"},
+      "knob6": {"dd": "出力言語を強制: <code>en · zh-CN · zh-TW · ja · ko · fr · de · es</code>。指定しなければ <code>settings.json</code> から自動検出。"}
+    },
+    "cta": {
+      "eyebrow": "使い始める",
+      "h2": "Claude Code プラグインとしてインストール。",
+      "lede": "marketplace エントリ 1 つ、コマンド 1 本、npm 依存ゼロ。Node の上で動く —— つまり Claude Code 自身が既に同梱している runtime。",
+      "githubBtn": "GitHub ↗",
+      "howBtn": "しくみ",
+      "codeComment": "Claude Code セッション内で"
+    },
+    "foot": {"copy": "© pms-inspector · MIT · npm 依存ゼロ", "githubLink": "GitHub", "ccLink": "Claude Code"}
+  },
+
+  "ko": {
+    "htmlLang": "ko",
+    "langName": "한국어",
+    "langFlag": "🇰🇷",
+    "canonicalUrl": "https://alwinlin23.github.io/pms-inspector/ko.html",
+    "meta": {
+      "title": "pms-inspector — Claude Code 세션이 실제로 로드하는 것을 확인하세요",
+      "description": "시스템 프롬프트를 정적으로 감사하는 무의존 Claude Code 플러그인: plugins / MCP / skills / agents / hooks 를 바이트·토큰 계산과 원클릭 튜닝 제안과 함께 표시."
+    },
+    "og": {
+      "title": "pms-inspector — Claude Code 세션이 실제로 로드하는 것을 확인하세요",
+      "description": "시스템 프롬프트를 정적으로 감사하는 무의존 Claude Code 플러그인. 바이트 / 토큰 계산과 원클릭 튜닝 제안 포함."
+    },
+    "nav": {"how": "작동 방식", "states": "4가지 상태", "beforeAfter": "전후 비교", "tune": "노브", "github": "GitHub ↗"},
+    "hero": {
+      "kicker": "Plugin · MCP · Skill 인스펙터",
+      "titleHtml": "세션이 <em>실제로</em> 로드하는 것을 봅니다.",
+      "ledeHtml": "무의존 Claude Code 플러그인. 디스크의 설정을 읽어 plugin / MCP / skill / agent / hook 각각의 바이트·토큰량을 알려주고 —— skill 300개 구성에서 턴당 <strong>2k</strong> 인지 <strong>20k</strong> 토큰인지를 결정하는 그 하나의 노브를 짚어냅니다.",
+      "installBtn": "설치 →",
+      "sourceBtn": "소스"
+    },
+    "term": {"hero": {"warn2": "모든 skill의 설명 텍스트가 폐기됩니다.", "suggest": "제안: 0.15 로 올리기 → 약 18.9k 토큰 (윈도우의 9.4%)"}},
+    "how": {
+      "eyebrow": "01 · 작동 방식",
+      "h2": "다음 턴이 시작하기 전에, 디스크를 정적으로 감사합니다.",
+      "pHtml": "<code>/context</code> 는 현재 대화를 보여줍니다. <code>/pms-inspector</code> 는 <code>~/.claude/</code> 설정을 읽고 <em>다음</em> 세션이 무엇을 로드할지 예측합니다 —— LLM 호출 없음, 쓰기 없음, 네트워크 없음.",
+      "step1": {"h4": "발견", "pHtml": "<code>enabledPlugins</code> 와 디스크의 모든 MCP / skill / agent / hook 을 순회."},
+      "step2": {"h4": "측정", "pHtml": "frontmatter + description 의 바이트를 세고, 4 자 ≒ 1 토큰으로 환산."},
+      "step3": {"h4": "분류", "pHtml": "<code>skillListingBudgetFraction</code> 과 <code>skillListingMaxDescChars</code> 적용. 4 가지 상태, 모호함 없음."},
+      "step4": {"h4": "리포트", "pHtml": "사람이 보기 좋은 정렬 테이블 (CJK 너비 대응) 또는 파이프라인용 <code>--json</code>."},
+      "step5": {"h4": "제안", "pHtml": "구체적인 노브 값과 토큰 델타 —— <code>settings.json</code> 에 그대로 붙여넣기 가능."}
+    },
+    "sig": {
+      "eyebrow": "02 · 4가지 로드 상태",
+      "h2": "모든 skill 은 정확히 한 칸에 떨어집니다.",
+      "pHtml": "각 칸이 Pantone 스타일 칩인 이유는 <em>PMS</em> 가 Pantone Matching System 이기도 하기 때문 —— 그리고 이 도구가 하는 일은 결국 당신이 <em>배포한 것</em>과 실제로 <em>로드된 것</em>의 컬러 매칭입니다.",
+      "full":     {"name": "FULL",              "desc": "description 이 모델에 완전히 전달됨 —— 실제로 트리거되기를 원하는 skill 이 있어야 할 자리."},
+      "trunc":    {"name": "DESC-TRUNCATED",    "descHtml": "<code>skillListingMaxDescChars</code> (기본 1536) 로 잘림. 뒷부분이 조용히 잘립니다."},
+      "comp":     {"name": "BUDGET-COMPRESSED", "descHtml": "글로벌 <code>skillListingBudgetFraction</code> 에 의해 압축됨. 텍스트는 남지만 원본보다 짧습니다."},
+      "nameOnly": {"name": "NAME-ONLY",         "desc": "description 이 완전히 사라짐 —— 모델은 slug 만 보고 언제 호출해야 할지 판단할 수 없습니다."}
+    },
+    "ba": {
+      "eyebrow": "03 · 참조 케이스 · 318 skills · 200k 윈도우",
+      "h2": "설정 2 개. 그 사이의 차이는 약 17k 토큰.",
+      "before": {"h4": "이전 —— 기본 budget 0.01", "bigHtml": "318&nbsp;/&nbsp;318 <em>name-only</em>", "p": "약 2 000 토큰 소비. 하지만 모델은 어떤 skill 이 왜 존재하는지 모릅니다. 호출의 절반은 빗나갑니다."},
+      "after":  {"h4": "이후 —— budget 을 0.15 로", "bigHtml": "318&nbsp;/&nbsp;318 <em>full</em>",      "p": "약 18 900 토큰 (윈도우의 9.4%). 모든 skill 의 트리거 설명이 모델에 도달합니다. 호출이 맞아 들어가기 시작합니다."}
+    },
+    "knobs": {
+      "eyebrow": "04 · 이 도구가 실제로 검사하는 것",
+      "h2": "노브 3 개. 상태 4 가지. 진실 1 가지.",
+      "knob1": {"dd": "Claude Code 가 skill description 에 예약하는 컨텍스트 비율. 기본 <code>0.01</code>. skill 이 많은 설정에서는 이 하나로 모두 <code>name-only</code> 로 떨어집니다."},
+      "knob2": {"dd": "description 이 <code>desc-truncated</code> 로 표시되기 전의 하드 상한. 기본 <code>1536</code>. 병목이 되는 경우는 드묾 —— 보통 fraction 이 먼저 물립니다."},
+      "knob3": {"dd": "가정하는 컨텍스트 윈도우를 재정의 (기본 <code>200000</code>). Haiku 나 구세대 tier 를 모델링할 때 유용."},
+      "knob4": {"dd": "기계가 읽을 수 있는 출력. 4 가지 로드 상태, 바이트 / 토큰 카운트, skill 별 세부 —— 사용 중인 파이프라인에 그대로 파이프."},
+      "knob5": {"dd": "사람 대상 리포트에 skill 별 세부 표시. 특정 skill 이 유독 무거울 때 유용."},
+      "knob6": {"dd": "출력 언어 강제: <code>en · zh-CN · zh-TW · ja · ko · fr · de · es</code>. 지정하지 않으면 <code>settings.json</code> 에서 자동 감지."}
+    },
+    "cta": {
+      "eyebrow": "시작하기",
+      "h2": "Claude Code 플러그인으로 설치.",
+      "lede": "marketplace 항목 하나, 명령 하나, npm 의존성 없음. Node 위에서 실행 —— Claude Code 자체가 이미 함께 제공하는 런타임입니다.",
+      "githubBtn": "GitHub ↗",
+      "howBtn": "작동 방식",
+      "codeComment": "Claude Code 세션 안에서"
+    },
+    "foot": {"copy": "© pms-inspector · MIT · npm 의존성 없음", "githubLink": "GitHub", "ccLink": "Claude Code"}
+  },
+
+  "fr": {
+    "htmlLang": "fr",
+    "langName": "Français",
+    "langFlag": "🇫🇷",
+    "canonicalUrl": "https://alwinlin23.github.io/pms-inspector/fr.html",
+    "meta": {
+      "title": "pms-inspector — Voyez ce que votre session Claude Code charge réellement",
+      "description": "Plugin Claude Code sans dépendance qui audite le system prompt : plugins, serveurs MCP, skills, agents, hooks — avec le calcul octets / tokens et un réglage en un clic."
+    },
+    "og": {
+      "title": "pms-inspector — Voyez ce que votre session Claude Code charge réellement",
+      "description": "Plugin Claude Code sans dépendance qui audite le system prompt, avec calcul octets / tokens et réglage en un clic."
+    },
+    "nav": {"how": "Fonctionnement", "states": "Quatre états", "beforeAfter": "Avant / après", "tune": "Réglages", "github": "GitHub ↗"},
+    "hero": {
+      "kicker": "Inspecteur Plugin · MCP · Skill",
+      "titleHtml": "Voyez ce que votre session charge <em>réellement</em>.",
+      "ledeHtml": "Un plugin Claude Code sans dépendance qui lit votre configuration sur disque et calcule les octets / tokens pour chaque plugin, serveur MCP, skill, agent et hook — plus le réglage qui décide si une configuration de 300 skills coûte <strong>2k</strong> ou <strong>20k</strong> tokens par tour.",
+      "installBtn": "Installer →",
+      "sourceBtn": "Source"
+    },
+    "term": {"hero": {"warn2": "le texte de description est supprimé pour chaque skill.", "suggest": "suggéré : monter à 0,15 → ~18,9 k tokens (9,4 % de la fenêtre)"}},
+    "how": {
+      "eyebrow": "01 · Fonctionnement",
+      "h2": "Un audit statique du disque, avant le prochain tour.",
+      "pHtml": "<code>/context</code> montre la conversation en cours. <code>/pms-inspector</code> lit votre configuration <code>~/.claude/</code> et prédit ce que la <em>prochaine</em> session chargera — pas d'appel LLM, pas d'écriture, pas de réseau.",
+      "step1": {"h4": "Découvrir", "pHtml": "Parcourir <code>enabledPlugins</code> et chaque serveur MCP, skill, agent et hook du disque."},
+      "step2": {"h4": "Mesurer", "pHtml": "Compter les octets du frontmatter + description ; convertir à 4 caractères ≈ 1 token."},
+      "step3": {"h4": "Classer", "pHtml": "Appliquer <code>skillListingBudgetFraction</code> et <code>skillListingMaxDescChars</code>. Quatre états, sans flou."},
+      "step4": {"h4": "Rapporter", "pHtml": "Tableaux alignés pour l'humain (largeurs CJK conscientes) ou <code>--json</code> pour vos pipelines."},
+      "step5": {"h4": "Suggérer", "pHtml": "Valeurs concrètes des réglages avec deltas de tokens — à copier-coller dans <code>settings.json</code>."}
+    },
+    "sig": {
+      "eyebrow": "02 · Les quatre états de chargement",
+      "h2": "Chaque skill tombe dans exactement un carré.",
+      "pHtml": "Chaque carré est une puce style Pantone parce que <em>PMS</em> désigne aussi le Pantone Matching System — et tout ce que cet outil fait, c'est appairer ce que vous <em>publiez</em> avec ce qui est effectivement <em>chargé</em>.",
+      "full":     {"name": "FULL",              "desc": "La description atteint le modèle intacte — l'état idéal pour un skill que vous voulez vraiment voir déclenché."},
+      "trunc":    {"name": "DESC-TRUNCATED",    "descHtml": "Plafonnée par <code>skillListingMaxDescChars</code> (défaut 1536). La fin est coupée en silence."},
+      "comp":     {"name": "BUDGET-COMPRESSED", "descHtml": "Compressée par le <code>skillListingBudgetFraction</code> global. Le texte reste, mais plus court que le fichier."},
+      "nameOnly": {"name": "NAME-ONLY",         "desc": "Description totalement supprimée — le modèle ne voit que le slug et ne peut pas raisonner sur quand l'invoquer."}
+    },
+    "ba": {
+      "eyebrow": "03 · Cas de référence · 318 skills · fenêtre 200 k",
+      "h2": "Deux réglages. Environ 17 k tokens entre les deux.",
+      "before": {"h4": "Avant — budget par défaut 0,01", "bigHtml": "318&nbsp;/&nbsp;318 <em>name-only</em>", "p": "~2 000 tokens dépensés, mais le modèle ignore pourquoi chaque skill existe. La moitié de vos invocations manque."},
+      "after":  {"h4": "Après — budget monté à 0,15", "bigHtml": "318&nbsp;/&nbsp;318 <em>full</em>",      "p": "~18 900 tokens (9,4 % de la fenêtre). La phrase-déclencheur de chaque skill atteint le modèle. Les invocations commencent à tomber juste."}
+    },
+    "knobs": {
+      "eyebrow": "04 · Ce que l'outil inspecte vraiment",
+      "h2": "Trois réglages. Quatre états. Une vérité.",
+      "knob1": {"dd": "Fraction de la fenêtre de contexte que Claude Code réserve aux descriptions de skills. Défaut <code>0.01</code>. Sur une configuration chargée, c'est le seul réglage qui fait basculer tout le monde en <code>name-only</code>."},
+      "knob2": {"dd": "Plafond dur par description avant qu'elle soit marquée <code>desc-truncated</code>. Défaut <code>1536</code>. Rarement le goulot — c'est habituellement la fraction qui mord en premier."},
+      "knob3": {"dd": "Redéfinir la fenêtre de contexte supposée (défaut <code>200000</code>). Pratique pour modéliser Haiku ou un tier plus ancien."},
+      "knob4": {"dd": "Sortie parsable par machine. Les quatre états, comptes octets / tokens, détail par skill — à brancher sur ce que vous utilisez déjà."},
+      "knob5": {"dd": "Détail par skill dans le rapport humain. Utile quand un skill pèse disproportionnellement lourd."},
+      "knob6": {"dd": "Forcer la langue de sortie : <code>en · zh-CN · zh-TW · ja · ko · fr · de · es</code>. Sinon détectée depuis <code>settings.json</code>."}
+    },
+    "cta": {
+      "eyebrow": "Passer à l'action",
+      "h2": "Installez en tant que plugin Claude Code.",
+      "lede": "Une entrée marketplace, une commande, zéro dépendance npm. Fonctionne sur Node — le runtime que Claude Code embarque déjà.",
+      "githubBtn": "GitHub ↗",
+      "howBtn": "Fonctionnement",
+      "codeComment": "dans une session Claude Code"
+    },
+    "foot": {"copy": "© pms-inspector · MIT · zéro dépendance npm", "githubLink": "GitHub", "ccLink": "Claude Code"}
+  },
+
+  "de": {
+    "htmlLang": "de",
+    "langName": "Deutsch",
+    "langFlag": "🇩🇪",
+    "canonicalUrl": "https://alwinlin23.github.io/pms-inspector/de.html",
+    "meta": {
+      "title": "pms-inspector — Sehen Sie, was Ihre Claude-Code-Sitzung tatsächlich lädt",
+      "description": "Abhängigkeitsfreies Claude-Code-Plugin, das den System-Prompt prüft: Plugins, MCP-Server, Skills, Agents, Hooks — mit Byte-/Token-Rechnung und Ein-Klick-Feinabstimmung."
+    },
+    "og": {
+      "title": "pms-inspector — Sehen Sie, was Ihre Claude-Code-Sitzung tatsächlich lädt",
+      "description": "Abhängigkeitsfreies Claude-Code-Plugin, das den System-Prompt prüft, mit Byte-/Token-Rechnung und Ein-Klick-Feinabstimmung."
+    },
+    "nav": {"how": "Funktionsweise", "states": "Vier Zustände", "beforeAfter": "Vorher / nachher", "tune": "Regler", "github": "GitHub ↗"},
+    "hero": {
+      "kicker": "Plugin · MCP · Skill-Inspektor",
+      "titleHtml": "Sehen Sie, was Ihre Sitzung <em>tatsächlich</em> lädt.",
+      "ledeHtml": "Ein abhängigkeitsfreies Claude-Code-Plugin, das Ihre Konfiguration von der Festplatte liest und Byte-/Token-Werte für jedes Plugin, jeden MCP-Server, jedes Skill, jeden Agent und jeden Hook ausweist — plus den einen Regler, der entscheidet, ob eine 300-Skills-Umgebung <strong>2k</strong> oder <strong>20k</strong> Tokens pro Turn kostet.",
+      "installBtn": "Installieren →",
+      "sourceBtn": "Quelle"
+    },
+    "term": {"hero": {"warn2": "der Beschreibungstext wird für jedes Skill verworfen.", "suggest": "Vorschlag: auf 0,15 anheben → ~18,9k Tokens (9,4 % des Fensters)"}},
+    "how": {
+      "eyebrow": "01 · Funktionsweise",
+      "h2": "Ein statisches Audit der Festplatte, bevor der nächste Turn startet.",
+      "pHtml": "<code>/context</code> zeigt die aktuelle Unterhaltung. <code>/pms-inspector</code> liest Ihre Konfiguration in <code>~/.claude/</code> und sagt voraus, was die <em>nächste</em> Sitzung laden wird — kein LLM-Aufruf, kein Schreiben, kein Netzwerk.",
+      "step1": {"h4": "Erfassen", "pHtml": "Über <code>enabledPlugins</code> und jeden MCP-Server, jedes Skill, jeden Agent und jeden Hook auf der Platte laufen."},
+      "step2": {"h4": "Messen", "pHtml": "Bytes für Frontmatter + Beschreibung zählen; mit 4 Zeichen ≈ 1 Token umrechnen."},
+      "step3": {"h4": "Klassifizieren", "pHtml": "<code>skillListingBudgetFraction</code> und <code>skillListingMaxDescChars</code> anwenden. Vier Zustände, keine Unschärfe."},
+      "step4": {"h4": "Berichten", "pHtml": "Menschenlesbare, ausgerichtete Tabellen (CJK-Breite bewusst) oder <code>--json</code> für Pipelines."},
+      "step5": {"h4": "Vorschlagen", "pHtml": "Konkrete Reglerwerte mit Token-Deltas — direkt in <code>settings.json</code> einfügen."}
+    },
+    "sig": {
+      "eyebrow": "02 · Die vier Ladezustände",
+      "h2": "Jedes Skill landet in genau einem Feld.",
+      "pHtml": "Jedes Feld ist ein Chip im Pantone-Stil, weil <em>PMS</em> auch Pantone Matching System heißt — und dieses Werkzeug macht nichts anderes, als das, was Sie <em>ausgeliefert</em> haben, mit dem abzugleichen, was tatsächlich <em>geladen</em> wurde.",
+      "full":     {"name": "FULL",              "desc": "Die Beschreibung erreicht das Modell unversehrt — der Idealzustand für ein Skill, das Sie wirklich ausgelöst haben wollen."},
+      "trunc":    {"name": "DESC-TRUNCATED",    "descHtml": "Durch <code>skillListingMaxDescChars</code> (Standard 1536) gedeckelt. Das Ende wird still abgeschnitten."},
+      "comp":     {"name": "BUDGET-COMPRESSED", "descHtml": "Vom globalen <code>skillListingBudgetFraction</code> zusammengequetscht. Text bleibt, aber kürzer als die Datei."},
+      "nameOnly": {"name": "NAME-ONLY",         "desc": "Beschreibung komplett verworfen — das Modell sieht nur den Slug und kann nicht schlussfolgern, wann es zu triggern ist."}
+    },
+    "ba": {
+      "eyebrow": "03 · Referenzfall · 318 Skills · 200-k-Fenster",
+      "h2": "Zwei Einstellungen. Etwa 17k Tokens dazwischen.",
+      "before": {"h4": "Vorher — Standard-Budget 0,01", "bigHtml": "318&nbsp;/&nbsp;318 <em>name-only</em>", "p": "~2 000 Tokens verbraucht, aber das Modell weiß nicht, warum es irgendein Skill gibt. Die Hälfte Ihrer Aufrufe geht daneben."},
+      "after":  {"h4": "Nachher — Budget auf 0,15", "bigHtml": "318&nbsp;/&nbsp;318 <em>full</em>",       "p": "~18 900 Tokens (9,4 % des Fensters). Der Trigger-Satz jedes Skills erreicht das Modell. Aufrufe landen wieder."}
+    },
+    "knobs": {
+      "eyebrow": "04 · Was das Werkzeug tatsächlich prüft",
+      "h2": "Drei Regler. Vier Zustände. Eine Wahrheit.",
+      "knob1": {"dd": "Anteil des Kontextfensters, den Claude Code für Skill-Beschreibungen reserviert. Standard <code>0.01</code>. In einer vollen Konfiguration ist das der eine Regler, der alles auf <code>name-only</code> kippt."},
+      "knob2": {"dd": "Hartes Limit pro Beschreibung, bevor sie als <code>desc-truncated</code> markiert wird. Standard <code>1536</code>. Selten der Engpass — meist beißt zuerst der Fraction-Regler."},
+      "knob3": {"dd": "Angenommenes Kontextfenster überschreiben (Standard <code>200000</code>). Praktisch, wenn Sie Haiku oder eine ältere Klasse modellieren."},
+      "knob4": {"dd": "Maschinenlesbare Ausgabe. Alle vier Zustände, Byte-/Token-Zählungen und Aufschlüsselung pro Skill — in jede Pipeline pipebar."},
+      "knob5": {"dd": "Aufschlüsselung pro Skill im menschlichen Report. Nützlich, wenn ein Skill überproportional schwer wiegt."},
+      "knob6": {"dd": "Ausgabesprache erzwingen: <code>en · zh-CN · zh-TW · ja · ko · fr · de · es</code>. Andernfalls automatisch aus <code>settings.json</code> erkannt."}
+    },
+    "cta": {
+      "eyebrow": "Loslegen",
+      "h2": "Als Claude-Code-Plugin installieren.",
+      "lede": "Ein Marketplace-Eintrag, ein Kommando, null npm-Abhängigkeiten. Läuft auf Node — der Runtime, die Claude Code ohnehin schon mitbringt.",
+      "githubBtn": "GitHub ↗",
+      "howBtn": "Funktionsweise",
+      "codeComment": "in einer Claude-Code-Sitzung"
+    },
+    "foot": {"copy": "© pms-inspector · MIT · null npm-Abhängigkeiten", "githubLink": "GitHub", "ccLink": "Claude Code"}
+  },
+
+  "es": {
+    "htmlLang": "es",
+    "langName": "Español",
+    "langFlag": "🇪🇸",
+    "canonicalUrl": "https://alwinlin23.github.io/pms-inspector/es.html",
+    "meta": {
+      "title": "pms-inspector — Vea qué carga realmente su sesión de Claude Code",
+      "description": "Plugin de Claude Code sin dependencias que audita el system prompt: plugins, servidores MCP, skills, agents, hooks — con cálculo de bytes / tokens y ajuste en un clic."
+    },
+    "og": {
+      "title": "pms-inspector — Vea qué carga realmente su sesión de Claude Code",
+      "description": "Plugin de Claude Code sin dependencias que audita el system prompt, con cálculo de bytes / tokens y ajuste en un clic."
+    },
+    "nav": {"how": "Cómo funciona", "states": "Cuatro estados", "beforeAfter": "Antes / después", "tune": "Ajustes", "github": "GitHub ↗"},
+    "hero": {
+      "kicker": "Inspector Plugin · MCP · Skill",
+      "titleHtml": "Vea qué carga <em>realmente</em> su sesión.",
+      "ledeHtml": "Un plugin de Claude Code sin dependencias que lee su configuración en disco y muestra el cómputo de bytes / tokens de cada plugin, servidor MCP, skill, agent y hook — más el ajuste que decide si una configuración de 300 skills cuesta <strong>2k</strong> o <strong>20k</strong> tokens por turno.",
+      "installBtn": "Instalar →",
+      "sourceBtn": "Fuente"
+    },
+    "term": {"hero": {"warn2": "el texto de descripción se descarta para cada skill.", "suggest": "sugerido: subir a 0,15 → ~18,9 k tokens (9,4 % de la ventana)"}},
+    "how": {
+      "eyebrow": "01 · Cómo funciona",
+      "h2": "Una auditoría estática del disco, antes de que arranque el próximo turno.",
+      "pHtml": "<code>/context</code> muestra la conversación actual. <code>/pms-inspector</code> lee su configuración en <code>~/.claude/</code> y predice qué cargará la <em>siguiente</em> sesión — sin llamadas al LLM, sin escrituras, sin red.",
+      "step1": {"h4": "Descubrir", "pHtml": "Recorrer <code>enabledPlugins</code> y cada servidor MCP, skill, agent y hook del disco."},
+      "step2": {"h4": "Medir", "pHtml": "Contar bytes de frontmatter + descripción; convertir a 4 caracteres ≈ 1 token."},
+      "step3": {"h4": "Clasificar", "pHtml": "Aplicar <code>skillListingBudgetFraction</code> y <code>skillListingMaxDescChars</code>. Cuatro estados, sin ambigüedades."},
+      "step4": {"h4": "Reportar", "pHtml": "Tablas alineadas para humanos (con ancho CJK) o <code>--json</code> para pipelines."},
+      "step5": {"h4": "Sugerir", "pHtml": "Valores concretos de los ajustes con delta de tokens — copiar y pegar en <code>settings.json</code>."}
+    },
+    "sig": {
+      "eyebrow": "02 · Los cuatro estados de carga",
+      "h2": "Cada skill cae exactamente en una casilla.",
+      "pHtml": "Cada casilla es una ficha estilo Pantone porque <em>PMS</em> también es el Pantone Matching System — y todo lo que hace esta herramienta es emparejar lo que usted <em>publicó</em> con lo que realmente <em>se cargó</em>.",
+      "full":     {"name": "FULL",              "desc": "La descripción llega al modelo intacta — el estado ideal para un skill que realmente quiere disparar."},
+      "trunc":    {"name": "DESC-TRUNCATED",    "descHtml": "Limitada por <code>skillListingMaxDescChars</code> (por defecto 1536). El final se corta en silencio."},
+      "comp":     {"name": "BUDGET-COMPRESSED", "descHtml": "Comprimida por el <code>skillListingBudgetFraction</code> global. El texto permanece, pero más corto que el archivo."},
+      "nameOnly": {"name": "NAME-ONLY",         "desc": "Descripción totalmente descartada — el modelo solo ve el slug y no puede razonar cuándo invocarlo."}
+    },
+    "ba": {
+      "eyebrow": "03 · Caso de referencia · 318 skills · ventana 200 k",
+      "h2": "Dos ajustes. Aproximadamente 17 k tokens entre ambos.",
+      "before": {"h4": "Antes — presupuesto por defecto 0,01", "bigHtml": "318&nbsp;/&nbsp;318 <em>name-only</em>", "p": "~2 000 tokens gastados, pero el modelo no sabe por qué existe ningún skill. La mitad de sus invocaciones fallan."},
+      "after":  {"h4": "Después — presupuesto a 0,15", "bigHtml": "318&nbsp;/&nbsp;318 <em>full</em>",             "p": "~18 900 tokens (9,4 % de la ventana). La frase-disparador de cada skill llega al modelo. Las invocaciones empiezan a acertar."}
+    },
+    "knobs": {
+      "eyebrow": "04 · Qué inspecciona realmente la herramienta",
+      "h2": "Tres ajustes. Cuatro estados. Una verdad.",
+      "knob1": {"dd": "Fracción de la ventana de contexto que Claude Code reserva para descripciones de skills. Por defecto <code>0.01</code>. En una configuración cargada este es el único ajuste que voltea todo a <code>name-only</code>."},
+      "knob2": {"dd": "Límite duro por descripción antes de marcarla como <code>desc-truncated</code>. Por defecto <code>1536</code>. Rara vez es el cuello de botella — normalmente la fracción muerde antes."},
+      "knob3": {"dd": "Anular la ventana de contexto asumida (por defecto <code>200000</code>). Útil al modelar Haiku o un tier antiguo."},
+      "knob4": {"dd": "Salida procesable por máquina. Los cuatro estados, cuentas de bytes / tokens y desglose por skill — canalícelo a lo que ya use."},
+      "knob5": {"dd": "Desglose por skill en el reporte humano. Útil cuando un skill pesa desproporcionadamente."},
+      "knob6": {"dd": "Forzar el idioma de salida: <code>en · zh-CN · zh-TW · ja · ko · fr · de · es</code>. Si no se especifica se autodetecta desde <code>settings.json</code>."}
+    },
+    "cta": {
+      "eyebrow": "A por ello",
+      "h2": "Instale como plugin de Claude Code.",
+      "lede": "Una entrada de marketplace, un comando, cero dependencias npm. Se ejecuta sobre Node — el runtime que Claude Code ya incluye.",
+      "githubBtn": "GitHub ↗",
+      "howBtn": "Cómo funciona",
+      "codeComment": "en una sesión de Claude Code"
+    },
+    "foot": {"copy": "© pms-inspector · MIT · cero dependencias npm", "githubLink": "GitHub", "ccLink": "Claude Code"}
+  }
+}

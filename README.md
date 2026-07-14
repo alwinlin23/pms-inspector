@@ -24,6 +24,59 @@ Claude Code auto-loads every skill from every enabled plugin. On a busy setup (e
 
 This is **not** a replacement for `/context`. `/context` shows *runtime* state (what's in the current conversation). `/pms-inspector` predicts what the *next* session will load by reading your on-disk config.
 
+## Before / after — the one setting that matters
+
+Claude Code's default `skillListingBudgetFraction: 0.01` almost always collapses every skill description down to *just the slug*. On a 318-skill setup that's the difference between the model seeing 318 sentences it can **reason about** and 318 slugs it can only **guess at**:
+
+**Before —  `skillListingBudgetFraction: 0.01`  (Claude Code default)**
+
+```
+skills   318 discovered
+  name-only    318   ← 100 %
+  full           0
+
+model sees:  318 slugs, zero context
+est. cost:   ~ 2.0 k tokens / turn
+```
+
+**After —  `skillListingBudgetFraction: 0.15`**
+
+```
+skills   318 discovered
+  full         318   ← 100 %
+  name-only      0
+
+model sees:  318 slugs + full descriptions
+est. cost:   ~ 18.9 k tokens / turn   (9.4 % of a 200k window)
+```
+
+The delta is roughly **17k tokens per turn** — worth every one of them, because those tokens are what let the model decide which skill to fire.
+
+### Why "name-only" is broken — even for humans
+
+Here's what the model sees when a skill lands in `name-only`. Read these slugs and ask yourself *which one you should invoke, and when*:
+
+- `smart-outline`
+- `observation-context`
+- `session-start-context`
+- `hookify`
+- `prime-corpus`
+- `smart-search`
+
+You can't tell. Neither can Claude. `smart-outline` might extract headings from a document — or it might outline a *plan* before you write code. Same slug, two totally different triggers. Multiply by 318 and the harness stops routing to skills at all; it just does the work in the main context, doubly expensive and slower, and every skill you carefully wrote might as well not be installed.
+
+The **description** is the trigger sentence — the thing that tells the model *when to fire*. Drop it and the slug is a Rorschach test.
+
+The fix is one line in `~/.claude/settings.json`:
+
+```jsonc
+{
+  "skillListingBudgetFraction": 0.15   // ← was 0.01 (CC default)
+}
+```
+
+`/pms-inspector` computes the exact number for your setup and offers `--apply <plan-id>` to write it for you, with a `.bak.<ISO-timestamp>` snapshot beforehand.
+
 ## Install
 
 ```

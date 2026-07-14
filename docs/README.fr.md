@@ -2,6 +2,8 @@
 
 [English](../README.md) · [简体中文](./README.zh-CN.md) · [繁體中文](./README.zh-TW.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md) · **Français** · [Deutsch](./README.de.md) · [Español](./README.es.md)
 
+📄 **Site web :** [alwinlin23.github.io/pms-inspector](https://alwinlin23.github.io/pms-inspector/)
+
 **P/M/S = Plugin / MCP / Skill Inspector (Inspecteur de plugins / MCP / skills).**
 
 Un plugin Claude Code sans dépendance qui vous montre exactement ce que votre session injecte dans le prompt système ── chaque plugin activé, serveur MCP, skill, agent et hook ── avec le décompte en octets et tokens, ainsi que des recommandations de réglage applicables en un clic.
@@ -21,6 +23,59 @@ Claude Code charge automatiquement chaque skill de chaque plugin activé. Sur un
 - Des leviers concrets : augmenter `skillListingBudgetFraction`, baisser `skillListingMaxDescChars`, ou désactiver le plus gros consommateur.
 
 Ce n'est **pas** un remplacement de `/context`. `/context` affiche l'état *runtime* (ce qui est dans la conversation actuelle). `/pms-inspector` lit votre configuration sur disque et prédit ce que la **prochaine** session chargera.
+
+## Un seul réglage change tout — Before / after
+
+Le `skillListingBudgetFraction: 0.01` par défaut de Claude Code réduit presque toujours la description de chaque skill à son simple slug (le nom). Sur une configuration de 318 skills, c'est la différence entre voir 318 phrases sur lesquelles le modèle peut **raisonner** et 318 noms sur lesquels il ne peut que **deviner** :
+
+**Before —  `skillListingBudgetFraction: 0.01`  (valeur par défaut de Claude Code)**
+
+```
+skills   318 discovered
+  name-only    318   ← 100 %
+  full           0
+
+model sees:  318 slugs, zero context
+est. cost:   ~ 2.0 k tokens / turn
+```
+
+**After —  `skillListingBudgetFraction: 0.15`**
+
+```
+skills   318 discovered
+  full         318   ← 100 %
+  name-only      0
+
+model sees:  318 slugs + full descriptions
+est. cost:   ~ 18.9 k tokens / turn   (9,4 % d'une fenêtre de 200k)
+```
+
+L'écart est d'environ **17k tokens par tour** — et ils sont largement rentabilisés, car ce sont précisément ces tokens qui permettent au modèle de décider quel skill déclencher.
+
+### Pourquoi « name-only » est cassé — même un humain n'y arrive pas
+
+Voici ce que le modèle voit quand un skill se retrouve en `name-only`. Lisez ces slugs et demandez-vous *lequel appeler, et quand* :
+
+- `smart-outline`
+- `observation-context`
+- `session-start-context`
+- `hookify`
+- `prime-corpus`
+- `smart-search`
+
+Vous ne pouvez pas trancher. Claude non plus. `smart-outline` peut aussi bien extraire les titres d'un document que **poser un plan avant d'écrire du code**. Même slug, deux déclencheurs radicalement différents. Multipliez par 318 et le harness cesse tout simplement de router vers les skills — il fait le travail directement dans le context principal, deux fois plus cher et plus lent, et chaque skill que vous avez soigneusement rédigé pourrait tout aussi bien ne pas être installé.
+
+C'est la **description** qui est la phrase de déclenchement — celle qui dit au modèle *quand tirer*. Retirez-la et le slug n'est plus qu'un test de Rorschach.
+
+Le correctif tient sur une ligne dans `~/.claude/settings.json` :
+
+```jsonc
+{
+  "skillListingBudgetFraction": 0.15   // ← était 0.01 (défaut CC)
+}
+```
+
+`/pms-inspector` calcule le nombre exact pour votre configuration et vous propose `--apply <plan-id>` pour l'écrire à votre place, avec un instantané `.bak.<horodatage-ISO>` préalable.
 
 ## Installation
 

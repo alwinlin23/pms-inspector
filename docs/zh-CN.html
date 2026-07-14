@@ -1,10 +1,26 @@
 <!DOCTYPE html>
+<!--
+  docs/_template.html — single HTML master for 8 localized pages.
+  Rendered by docs/_build.mjs from docs/_i18n.json.
+  DO NOT edit the generated docs/{index,zh-CN,zh-TW,ja,ko,fr,de,es}.html by hand;
+  edit this template or _i18n.json and re-run `node docs/_build.mjs`.
+
+  Placeholder syntax (double-braces, shown here with a zero-width space so the
+  build renderer does not mistake this comment for a real placeholder):
+    ​{​{key​}​}          → i18n[lang][key]   (raw HTML value; renderer does not escape)
+    ​{​{a.b.c​}​}        → dot-path lookup
+    ​{​{langDropdown​}​} → pre-rendered 8-item language menu (current language marked)
+-->
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>pms-inspector —— 看清你的 Claude Code session 到底加载了什么</title>
-<meta name="description" content="零依赖 Claude Code 插件,审计系统提示里的插件 / MCP / skill / agent / hook,附带字节/token 计算和一键调优。">
+<title>pms-inspector — 看清你的 Claude Code 会话到底加载了什么</title>
+<meta name="description" content="零依赖的 Claude Code 插件，静态审计系统提示：plugins、MCP、skills、agents、hooks —— 附带字节 / token 计算与一键调优建议。">
+<meta property="og:title" content="pms-inspector — 看清你的 Claude Code 会话到底加载了什么">
+<meta property="og:description" content="零依赖的 Claude Code 插件，静态审计系统提示，附带字节 / token 计算与一键调优建议。">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
 <link rel="canonical" href="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
 <link rel="alternate" hreflang="en" href="https://alwinlin23.github.io/pms-inspector/">
 <link rel="alternate" hreflang="zh-CN" href="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
@@ -15,173 +31,240 @@
 <link rel="alternate" hreflang="de" href="https://alwinlin23.github.io/pms-inspector/de.html">
 <link rel="alternate" hreflang="es" href="https://alwinlin23.github.io/pms-inspector/es.html">
 <link rel="alternate" hreflang="x-default" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext x='50%25' y='50%25' font-size='52' text-anchor='middle' dominant-baseline='central'%3E%F0%9F%94%8D%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<div class="wrap">
 
-<nav class="lang-switcher" aria-label="语言">
-  <details>
-    <summary aria-label="语言">
-      <span class="flag">🇨🇳</span>
-      <span class="label">简体中文</span>
-      <span class="caret">▼</span>
-    </summary>
-    <ul class="menu">
-      <li><a href="./index.html" hreflang="en"><span class="flag">🇺🇸</span> English</a></li>
-      <li><span class="current"><span class="flag">🇨🇳</span> 简体中文</span></li>
-      <li><a href="./zh-TW.html" hreflang="zh-TW"><span class="flag">🇹🇼</span> 繁體中文</a></li>
-      <li><a href="./ja.html" hreflang="ja"><span class="flag">🇯🇵</span> 日本語</a></li>
-      <li><a href="./ko.html" hreflang="ko"><span class="flag">🇰🇷</span> 한국어</a></li>
-      <li><a href="./fr.html" hreflang="fr"><span class="flag">🇫🇷</span> Français</a></li>
-      <li><a href="./de.html" hreflang="de"><span class="flag">🇩🇪</span> Deutsch</a></li>
-      <li><a href="./es.html" hreflang="es"><span class="flag">🇪🇸</span> Español</a></li>
-    </ul>
-  </details>
+<nav class="nav" aria-label="Primary">
+  <div class="nav-inner">
+    <a class="brand-mark" href="./">pms&#8209;inspector</a>
+    <a class="nav-link" href="#how">工作原理</a>
+    <a class="nav-link" href="#signature">四种状态</a>
+    <a class="nav-link" href="#before-after">调优前后</a>
+    <a class="nav-link" href="#tune">参数</a>
+    <div class="nav-right">
+      <a class="nav-link" href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">GitHub ↗</a>
+      <div class="lang" id="lang">
+        <button class="lang-btn" aria-haspopup="listbox" aria-expanded="false">
+          <span aria-hidden="true">🇨🇳</span><span>简体中文</span><span aria-hidden="true">▾</span>
+        </button>
+        <div class="lang-menu" role="listbox">
+          <a href="./" hreflang="en"><span aria-hidden="true">🇺🇸</span> English</a>
+          <a class="current" href="./zh-CN.html"><span aria-hidden="true">🇨🇳</span> 简体中文</a>
+          <a href="./zh-TW.html" hreflang="zh-TW"><span aria-hidden="true">🇨🇳</span> 繁體中文</a>
+          <a href="./ja.html" hreflang="ja"><span aria-hidden="true">🇯🇵</span> 日本語</a>
+          <a href="./ko.html" hreflang="ko"><span aria-hidden="true">🇰🇷</span> 한국어</a>
+          <a href="./fr.html" hreflang="fr"><span aria-hidden="true">🇫🇷</span> Français</a>
+          <a href="./de.html" hreflang="de"><span aria-hidden="true">🇩🇪</span> Deutsch</a>
+          <a href="./es.html" hreflang="es"><span aria-hidden="true">🇪🇸</span> Español</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </nav>
 
-<header class="hero">
-  <h1>pms-inspector</h1>
-  <p class="tag"><strong>P/M/S</strong> = Plugin / MCP / Skill Inspector(插件 / MCP / Skill 检查器)。</p>
-  <p class="lede">
-    一个零依赖的 Claude Code 插件,精确告诉你当前 session 往系统提示里塞了些什么
-    —— 每个已启用的插件、MCP 服务器、skill、agent、hook —— 附带字节/token 计算,以及可以一键应用的调优建议。
-  </p>
-  <div class="cta-row">
-    <a class="btn primary" href="https://github.com/alwinlin23/pms-inspector">在 GitHub 查看 →</a>
-    <a class="btn" href="#install">安装</a>
-    <a class="btn" href="#example">看示例输出</a>
+<section class="band">
+  <div class="inner">
+    <div class="hero">
+      <div class="hero-copy">
+        <p class="kicker">Plugin · MCP · Skill 检查器</p>
+        <h1 class="h-display">看清你的会话到底<em>加载了什么</em>。</h1>
+        <p class="lede">一个零依赖的 Claude Code 插件，读取你磁盘上的配置，为每一个 plugin、MCP、skill、agent、hook 打印字节 / token 账本 —— 并告诉你哪一个参数决定了 300 个 skill 的开销是 <strong>2k</strong> 还是 <strong>20k</strong> tokens / turn。</p>
+        <div class="hero-cta">
+          <a class="btn" href="#install">安装 →</a>
+          <a class="btn btn--ghost" href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">源码</a>
+        </div>
+      </div>
+
+      <div class="term" aria-label="pms-inspector sample output">
+        <div class="term-chrome" aria-hidden="true">
+          <span class="term-dot" style="background:#ff5f57"></span>
+          <span class="term-dot" style="background:#febc2e"></span>
+          <span class="term-dot" style="background:#28c840"></span>
+          <span class="term-title">/pms-inspector</span>
+        </div>
+<pre class="term-body"><span class="comment">╭────────────────────────────────────────────────────────────╮</span>
+<span class="comment">│</span>  <b>P/M/S Inspector</b> · what this session loads
+<span class="comment">╰────────────────────────────────────────────────────────────╯</span>
+
+<span class="prompt">context   </span>  200 000 tokens window · budget 0.01 (default)
+<span class="prompt">plugins   </span>  <b>12</b> enabled           ~ 84 KB
+<span class="prompt">mcp       </span>  <b>7</b> servers            ~ 41 KB
+<span class="prompt">skills    </span>  <b>318</b> discovered
+<span class="prompt">agents    </span>  <b>62</b>                  ~ 22 KB
+<span class="prompt">hooks     </span>  <b>9</b>                   ~  3 KB
+
+skill listing state ─────────────────────────────────────────
+  <span class="ok">full           </span>      0
+  <span class="warn">desc-truncated </span>      0
+  <span class="warn">budget-comp.   </span>      0
+  <span class="bad">name-only      </span>    <b>318</b>   ← <span class="bad">100 %</span>
+
+<span class="warn">⚠  skillListingBudgetFraction = 0.01</span>
+   所有 skill 的描述文本都被丢弃。
+
+<span class="accent">建议：调到 0.15 → 约 18.9k tokens（占上下文窗口 9.4%）</span>
+</pre>
+      </div>
+    </div>
   </div>
-</header>
+</section>
 
-<h2 id="why">为什么需要它</h2>
-<p>
-  Claude Code 会自动把每个已启用插件的每个 skill 都载入系统提示。当你配置比较满(例如
-  <code>ecc</code> + <code>claude-mem</code>,磁盘上 ~300 个 skill),默认的
-  <code>skillListingBudgetFraction: 0.01</code> 会悄悄把 skill 描述压缩到<em>只剩名字</em>,而且你根本看不出发生了什么。模型选错了 skill,你也不知道为什么。
-</p>
-<p><code>/pms-inspector</code> 会告诉你:</p>
-<ul>
-  <li>有多少插件 / MCP 服务器 / skill / agent / hook 处于启用状态。</li>
-  <li>每一类占了多少字节和 token。</li>
-  <li>每个 skill 的加载状态,分为四档(见下)。</li>
-  <li>skill 清单占了上下文窗口的百分之多少。</li>
-  <li>该拧哪个旋钮解决问题 —— 而且允许你一键应用。</li>
-</ul>
-<blockquote>
-  这<strong>不是</strong> <code>/context</code> 的替代品。<code>/context</code> 展示的是<em>运行时</em>状态(当前对话里加载了什么),而
-  <code>/pms-inspector</code> 通过读取磁盘上的配置,预测<em>下一个</em> session 会加载什么。
-</blockquote>
+<section class="band band--tint" id="how">
+  <div class="inner">
+    <p class="eyebrow">01 · 工作原理</p>
+    <h2 class="h-section">在下一个 turn 开始前，先做一次磁盘静态审计。</h2>
+    <p class="body-p" style="max-width:720px"><code>/context</code> 看的是当前会话。<code>/pms-inspector</code> 读你 <code>~/.claude/</code> 里的配置，预测<em>下一个</em>会话会加载什么 —— 不调 LLM、不写盘、不联网。</p>
 
-<h2 id="states">四种加载状态</h2>
-<p>磁盘上的每个 skill 都会落到这四档之一:</p>
-<div class="states">
-  <div class="state full">
-    <span class="badge">full</span>
-    <p>描述完整加载。模型可以基于描述选中这个 skill。</p>
+    <ol class="method" style="list-style:none;padding:0">
+      <li class="method-step"><p class="n">1</p><h4>发现</h4><p>遍历 <code>enabledPlugins</code> 与磁盘上的每一个 MCP、skill、agent、hook。</p></li>
+      <li class="method-step"><p class="n">2</p><h4>度量</h4><p>对 frontmatter + description 计字节，按 4 字符 ≈ 1 token 换算。</p></li>
+      <li class="method-step"><p class="n">3</p><h4>分类</h4><p>套用 <code>skillListingBudgetFraction</code> 与 <code>skillListingMaxDescChars</code>。四种状态，界限清晰。</p></li>
+      <li class="method-step"><p class="n">4</p><h4>报告</h4><p>人眼对齐的表格（含 CJK 视觉宽度）或 <code>--json</code> 供流水线使用。</p></li>
+      <li class="method-step"><p class="n">5</p><h4>建议</h4><p>给出具体的参数值 + token 差额 —— 复制粘贴进 <code>settings.json</code>。</p></li>
+    </ol>
   </div>
-  <div class="state trunc">
-    <span class="badge">desc-truncated</span>
-    <p>被 <code>skillListingMaxDescChars</code> 截断。仍可读,但尾巴被切掉。</p>
+</section>
+
+<section class="band" id="signature">
+  <div class="inner">
+    <p class="eyebrow">02 · 四种加载状态</p>
+    <h2 class="h-section">每一个 skill 都必然落进一格。</h2>
+    <p class="body-p" style="max-width:720px">这四张色卡采用 Pantone 风格 —— 因为 <em>PMS</em> 恰好也是 Pantone Matching System。这个工具做的事，本质上就是把你<em>发布</em>的和真正被<em>加载</em>的做一次校色。</p>
+
+    <div class="swatches">
+      <article class="pms-swatch pms-swatch--full">
+        <div class="pms-chip"><span class="pms-code">PMS 5773 C</span><span class="pms-state">FULL</span></div>
+        <p class="pms-desc">描述完整送达模型 —— 你希望被触发的 skill 就该在这一格。</p>
+      </article>
+      <article class="pms-swatch pms-swatch--trunc">
+        <div class="pms-chip"><span class="pms-code">PMS 138 C</span><span class="pms-state">DESC-TRUNCATED</span></div>
+        <p class="pms-desc">被 <code>skillListingMaxDescChars</code>（默认 1536）截断。末尾被静默切掉。</p>
+      </article>
+      <article class="pms-swatch pms-swatch--comp">
+        <div class="pms-chip"><span class="pms-code">PMS 165 C</span><span class="pms-state">BUDGET-COMPRESSED</span></div>
+        <p class="pms-desc">被全局 <code>skillListingBudgetFraction</code> 挤压。文本还在，但比源文件短。</p>
+      </article>
+      <article class="pms-swatch pms-swatch--name">
+        <div class="pms-chip"><span class="pms-code">PMS 179 C</span><span class="pms-state">NAME-ONLY</span></div>
+        <p class="pms-desc">描述被完全丢弃 —— 模型只看到 slug，无从判断何时该调用它。</p>
+      </article>
+    </div>
   </div>
-  <div class="state comp">
-    <span class="badge">budget-compressed</span>
-    <p>被全局的 <code>skillListingBudgetFraction</code> 压缩。描述被砍短以塞进预算。</p>
+</section>
+
+<section class="band band--tint" id="before-after">
+  <div class="inner">
+    <p class="eyebrow">03 · 参考案例 · 318 skills · 200k 窗口</p>
+    <h2 class="h-section">两组参数。差距大约 17k tokens。</h2>
+
+    <div class="two-cost">
+      <div class="cost">
+        <h4>之前 —— 默认 budget 0.01</h4>
+        <p class="big">318&nbsp;/&nbsp;318 <em>name-only</em></p>
+        <p>只花了约 2 000 tokens，但模型不知道任何 skill 存在的理由。一半调用打不中。</p>
+      </div>
+      <div class="cost">
+        <h4>之后 —— budget 调到 0.15</h4>
+        <p class="big">318&nbsp;/&nbsp;318 <em>full</em></p>
+        <p>约 18 900 tokens（窗口的 9.4%）。每一个 skill 的触发描述都送达模型。调用开始命中。</p>
+      </div>
+    </div>
+
+    <div class="two-cost" style="margin-top:32px">
+      <div class="term" aria-label="之前 —— 默认 budget 0.01">
+        <div class="term-chrome"><span class="term-title">before · fraction 0.01</span></div>
+<pre class="term-body"><span class="prompt">skills   </span>  318 discovered
+  <span class="bad">name-only    </span>  <b>318</b>   ← <span class="bad">100 %</span>
+  <span class="ok">full         </span>    0
+
+<span class="warn">model sees:</span>  <span class="comment">318 slugs, zero context</span>
+<span class="warn">est. cost:</span>   ~ 2.0 k tokens/turn
+</pre>
+      </div>
+      <div class="term" aria-label="之后 —— budget 调到 0.15">
+        <div class="term-chrome"><span class="term-title">after · fraction 0.15</span></div>
+<pre class="term-body"><span class="prompt">skills   </span>  318 discovered
+  <span class="ok">full         </span>  <b>318</b>   ← <span class="ok">100 %</span>
+  <span class="bad">name-only    </span>    0
+
+<span class="ok">model sees:</span>  <span class="comment">318 slugs + full descriptions</span>
+<span class="accent">est. cost:</span>  ~ 18.9 k tokens/turn  (9.4 % of window)
+</pre>
+      </div>
+    </div>
   </div>
-  <div class="state name">
-    <span class="badge">name-only</span>
-    <p>描述被完全丢弃。模型只能看到一个 slug,例如 <code>opensource-forker</code> —— 往往不够用来判断该不该选。</p>
+</section>
+
+<section class="band" id="tune">
+  <div class="inner">
+    <p class="eyebrow">04 · 工具真正在看什么</p>
+    <h2 class="h-section">三个旋钮。四种状态。一份真相。</h2>
+
+    <dl class="kv">
+      <dt><code>skillListingBudgetFraction</code></dt>
+      <dd>Claude Code 为 skill 描述预留的上下文比例。默认 <code>0.01</code>。skill 一多，这个参数会让所有 skill 一起掉到 <code>name-only</code>。</dd>
+
+      <dt><code>skillListingMaxDescChars</code></dt>
+      <dd>单条描述在被标记为 <code>desc-truncated</code> 前的硬上限。默认 <code>1536</code>。很少是瓶颈 —— 通常是 fraction 先咬到。</dd>
+
+      <dt><code>--ctx &lt;tokens&gt;</code></dt>
+      <dd>覆盖假定的上下文窗口（默认 <code>200000</code>）。给 Haiku 或旧 tier 建模时用得上。</dd>
+
+      <dt><code>--json</code></dt>
+      <dd>机器可解析输出。四种加载状态、字节 / token 计数、每个 skill 明细 —— 直接进你的 pipeline。</dd>
+
+      <dt><code>--verbose</code></dt>
+      <dd>人类报告里附带每个 skill 的明细。适合排查某一个 skill 占用异常大的情况。</dd>
+
+      <dt><code>--lang &lt;code&gt;</code></dt>
+      <dd>强制输出语言：<code>en · zh-CN · zh-TW · ja · ko · fr · de · es</code>。不指定则从 <code>settings.json</code> 自动检测。</dd>
+    </dl>
   </div>
-</div>
+</section>
 
-<h2 id="install">安装</h2>
-<p>添加 marketplace、安装插件:</p>
-<pre><code>/plugin marketplace add https://github.com/alwinlin23/pms-inspector
-/plugin install pms-inspector@pms-inspector</code></pre>
+<section class="band band--dark" id="install">
+  <div class="inner">
+    <div class="cta-band">
+      <div class="cta-copy">
+        <p class="eyebrow">开始使用</p>
+        <h2 class="h-section">作为 Claude Code 插件安装。</h2>
+        <p class="lede">一份 marketplace 条目、一条命令、零 npm 依赖。跑在 Node 上 —— 也就是 Claude Code 自己已经带的 runtime。</p>
+        <div class="hero-cta">
+          <a class="btn" href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">GitHub ↗</a>
+          <a class="btn btn--ghost" href="#how">工作原理</a>
+        </div>
+      </div>
+<pre class="cta-code"><span class="comment"># 在一个 Claude Code 会话里</span>
+<span class="prompt">/plugin marketplace add</span> alwinlin/pms-inspector
+<span class="prompt">/plugin install</span> pms-inspector@pms-inspector
+<span class="prompt">/pms-inspector</span>
+</pre>
+    </div>
+  </div>
+</section>
 
-<p>然后开一个新的 Claude Code session:</p>
-<pre><code>/pms-inspector</code></pre>
-
-<h2 id="usage">用法</h2>
-<pre><code>/pms-inspector                    # 人类可读摘要(自动检测语言)
-/pms-inspector --json             # 机器可解析 JSON
-/pms-inspector --ctx 200000       # 覆盖假定的上下文窗口
-/pms-inspector --verbose          # 每个 skill 的详细分类
-/pms-inspector --lang zh-CN       # 强制显示语言
-/pms-inspector --apply &lt;plan-id&gt;  # 应用某个建议的调优方案</code></pre>
-
-<h2 id="tuning">交互式调优</h2>
-<p>
-  当报告发现预算<strong>溢出</strong>(有 skill 掉到 name-only)或者明显<strong>过大</strong>(预算比实际用得上的还多一倍以上)时,Claude Code 会弹一个选择窗,列出脚本计算好的具体调优方案。选中一个之后会用
-  <code>--apply &lt;plan-id&gt;</code> 重跑脚本,只会把<strong>那一个键</strong>写进
-  <code>~/.claude/settings.json</code>。
-</p>
-<ul>
-  <li>每次写入前会自动生成一份 <code>.bak.&lt;ISO 时间戳&gt;</code> 备份。</li>
-  <li><code>ANTHROPIC_AUTH_TOKEN</code> 以及其他所有配置都不会被动。</li>
-  <li>变更在<strong>下一次</strong>启动 Claude Code 时生效 —— 系统提示是启动时组装的,不是每个回合都重算。</li>
-</ul>
-
-<h2 id="example">示例输出</h2>
-<p>在一台有 ~300 个 skill、预算已调好的机器上跑 <code>/pms-inspector</code>:</p>
-<pre><code>═══ Claude Code 上下文加载检查器 ═══
-显示语言: zh-CN (可通过 --lang 覆盖,例如 --lang en)
-
-配置位置: ~/.claude/settings.json
-  上下文窗口: 200,000 tokens (~800,000 字符)
-  skillListingBudgetFraction = 0.099
-     ↳ skill 清单占 ctx 的比例(CC 配置;默认 0.01)
-     ↳ 预算 79,200 字符 (占 ctx 的 9.90%)
-  skillListingMaxDescChars = 1536
-     ↳ 单个 skill 描述字符上限(CC 配置;默认 1536)
-  已启用插件: claude-mem, ecc, andrej-karpathy-skills, pms-inspector
-
-┌─ 对象总览 ───────────────────────────────────────────────────────┐
-│ Skills :  295   Agents :   67   MCP :   2   Hooks :    2         │
-└──────────────────────────────────────────────────────────────────┘
-
-┌─ Skill 清单字符预算 ─────────────────────────────────────────────┐
-│ 全量 (name+desc, 未裁剪)             18,807 tokens / 75,228 字符 │
-│ per-cap 后 (≤1536/skill)             18,807 tokens / 75,228 字符 │
-│ 预算 (0.099 × ctx)                   19,800 tokens / 79,200 字符 │
-│ 最终注入系统提示                     18,807 tokens / 75,228 字符 │
-│ 占 ctx 窗口                                                9.40% │
-└──────────────────────────────────────────────────────────────────┘
-
-┌─ Skill 描述加载状态 ─────────────────────────────────────────────┐
-│ ✅ 完整加载                            295 (100.00%) ==========  │
-│ ✂  被 MaxDescChars 截断                  0 (  0.00%)             │
-│ ⚠  被 BudgetFraction 压缩                0 (  0.00%)             │
-│ ❌ 仅剩名称                              0 (  0.00%)             │
-│ ·  本就无描述                            0 (  0.00%)             │
-└──────────────────────────────────────────────────────────────────┘</code></pre>
-
-<h2 id="i18n">开箱即用的 8 种语言</h2>
-<p>
-  <code>pms-inspector</code> 支持
-  <strong>en、zh-CN、zh-TW、ja、ko、fr、de、es</strong>。显示语言按优先级自动检测:
-</p>
-<ol>
-  <li><code>--lang &lt;code&gt;</code> 命令行参数</li>
-  <li><code>~/.claude/settings.json</code> 里的 <code>language</code> 字段(也接受本地名称,如 <code>"简体中文"</code>、<code>"日本語"</code>、<code>"français"</code>)</li>
-  <li>环境变量 <code>$LC_ALL</code> / <code>$LANG</code> / <code>$LANGUAGE</code></li>
-  <li>回退到 <code>en</code></li>
-</ol>
-
-<h2 id="safety">安全性</h2>
-<ul>
-  <li>默认调用只读。<code>--apply &lt;plan-id&gt;</code> 是<strong>唯一</strong>会写文件的代码路径,并且只会 patch <code>~/.claude/settings.json</code> 里的一个目标键(<code>skillListingBudgetFraction</code>、<code>skillListingMaxDescChars</code>,或者 <code>enabledPlugins</code> 里的一项)。每次修改前都会生成一份 <code>.bak.&lt;ISO 时间戳&gt;</code> 快照。</li>
-  <li>不读取 <code>ANTHROPIC_AUTH_TOKEN</code> 或任何鉴权字段 —— 只读跟加载相关的键。</li>
-  <li>零 npm 依赖。纯 Node 18+ 内置模块(<code>fs</code>、<code>path</code>、<code>os</code>)。</li>
-  <li>跨平台(macOS、Linux、Windows)。</li>
-</ul>
-
-<footer>
-  <p>
-    MIT 许可 · <a href="https://github.com/alwinlin23/pms-inspector">github.com/alwinlin23/pms-inspector</a>
-  </p>
+<footer class="foot">
+  <div class="foot-inner">
+    <span>© pms-inspector · MIT · 零 npm 依赖</span>
+    <span class="foot-right">
+      <a href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">GitHub</a> ·
+      <a href="https://claude.com/product/claude-code" target="_blank" rel="noopener">Claude Code</a>
+    </span>
+  </div>
 </footer>
 
-</div>
+<script>
+document.addEventListener('click', function (e) {
+  document.querySelectorAll('.lang').forEach(function (el) {
+    var inside = el.contains(e.target);
+    var onBtn  = e.target.closest && e.target.closest('.lang-btn');
+    if (inside && onBtn) { el.classList.toggle('open'); }
+    else if (!inside)    { el.classList.remove('open'); }
+  });
+});
+</script>
+
 </body>
 </html>

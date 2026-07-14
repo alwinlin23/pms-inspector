@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<!--
+  docs/_template.html — single HTML master for 8 localized pages.
+  Rendered by docs/_build.mjs from docs/_i18n.json.
+  DO NOT edit the generated docs/{index,zh-CN,zh-TW,ja,ko,fr,de,es}.html by hand;
+  edit this template or _i18n.json and re-run `node docs/_build.mjs`.
+
+  Placeholder syntax (double-braces, shown here with a zero-width space so the
+  build renderer does not mistake this comment for a real placeholder):
+    ​{​{key​}​}          → i18n[lang][key]   (raw HTML value; renderer does not escape)
+    ​{​{a.b.c​}​}        → dot-path lookup
+    ​{​{langDropdown​}​} → pre-rendered 8-item language menu (current language marked)
+-->
+<html lang="{{htmlLang}}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{meta.title}}</title>
+<meta name="description" content="{{meta.description}}">
+<meta property="og:title" content="{{og.title}}">
+<meta property="og:description" content="{{og.description}}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="{{canonicalUrl}}">
+<link rel="canonical" href="{{canonicalUrl}}">
+<link rel="alternate" hreflang="en" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="alternate" hreflang="zh-CN" href="https://alwinlin23.github.io/pms-inspector/zh-CN.html">
+<link rel="alternate" hreflang="zh-TW" href="https://alwinlin23.github.io/pms-inspector/zh-TW.html">
+<link rel="alternate" hreflang="ja" href="https://alwinlin23.github.io/pms-inspector/ja.html">
+<link rel="alternate" hreflang="ko" href="https://alwinlin23.github.io/pms-inspector/ko.html">
+<link rel="alternate" hreflang="fr" href="https://alwinlin23.github.io/pms-inspector/fr.html">
+<link rel="alternate" hreflang="de" href="https://alwinlin23.github.io/pms-inspector/de.html">
+<link rel="alternate" hreflang="es" href="https://alwinlin23.github.io/pms-inspector/es.html">
+<link rel="alternate" hreflang="x-default" href="https://alwinlin23.github.io/pms-inspector/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext x='50%25' y='50%25' font-size='52' text-anchor='middle' dominant-baseline='central'%3E%F0%9F%94%8D%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<nav class="nav" aria-label="Primary">
+  <div class="nav-inner">
+    <a class="brand-mark" href="./">pms&#8209;inspector</a>
+    <a class="nav-link" href="#how">{{nav.how}}</a>
+    <a class="nav-link" href="#signature">{{nav.states}}</a>
+    <a class="nav-link" href="#before-after">{{nav.beforeAfter}}</a>
+    <a class="nav-link" href="#tune">{{nav.tune}}</a>
+    <div class="nav-right">
+      <a class="nav-link" href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">{{nav.github}}</a>
+      <div class="lang" id="lang">
+        <button class="lang-btn" aria-haspopup="listbox" aria-expanded="false">
+          <span aria-hidden="true">{{langFlag}}</span><span>{{langName}}</span><span aria-hidden="true">▾</span>
+        </button>
+        <div class="lang-menu" role="listbox">
+{{langDropdown}}
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<section class="band">
+  <div class="inner">
+    <div class="hero">
+      <div class="hero-copy">
+        <p class="kicker">{{hero.kicker}}</p>
+        <h1 class="h-display">{{hero.titleHtml}}</h1>
+        <p class="lede">{{hero.ledeHtml}}</p>
+        <div class="hero-cta">
+          <a class="btn" href="#install">{{hero.installBtn}}</a>
+          <a class="btn btn--ghost" href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">{{hero.sourceBtn}}</a>
+        </div>
+      </div>
+
+      <div class="term" aria-label="pms-inspector sample output">
+        <div class="term-chrome" aria-hidden="true">
+          <span class="term-dot" style="background:#ff5f57"></span>
+          <span class="term-dot" style="background:#febc2e"></span>
+          <span class="term-dot" style="background:#28c840"></span>
+          <span class="term-title">/pms-inspector</span>
+        </div>
+<pre class="term-body"><span class="comment">╭────────────────────────────────────────────────────────────╮</span>
+<span class="comment">│</span>  <b>P/M/S Inspector</b> · what this session loads
+<span class="comment">╰────────────────────────────────────────────────────────────╯</span>
+
+<span class="prompt">context   </span>  200 000 tokens window · budget 0.01 (default)
+<span class="prompt">plugins   </span>  <b>12</b> enabled           ~ 84 KB
+<span class="prompt">mcp       </span>  <b>7</b> servers            ~ 41 KB
+<span class="prompt">skills    </span>  <b>318</b> discovered
+<span class="prompt">agents    </span>  <b>62</b>                  ~ 22 KB
+<span class="prompt">hooks     </span>  <b>9</b>                   ~  3 KB
+
+skill listing state ─────────────────────────────────────────
+  <span class="ok">full           </span>      0
+  <span class="warn">desc-truncated </span>      0
+  <span class="warn">budget-comp.   </span>      0
+  <span class="bad">name-only      </span>    <b>318</b>   ← <span class="bad">100 %</span>
+
+<span class="warn">⚠  skillListingBudgetFraction = 0.01</span>
+   {{term.hero.warn2}}
+
+<span class="accent">{{term.hero.suggest}}</span>
+</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band band--tint" id="how">
+  <div class="inner">
+    <p class="eyebrow">{{how.eyebrow}}</p>
+    <h2 class="h-section">{{how.h2}}</h2>
+    <p class="body-p" style="max-width:720px">{{how.pHtml}}</p>
+
+    <ol class="method" style="list-style:none;padding:0">
+      <li class="method-step"><p class="n">1</p><h4>{{how.step1.h4}}</h4><p>{{how.step1.pHtml}}</p></li>
+      <li class="method-step"><p class="n">2</p><h4>{{how.step2.h4}}</h4><p>{{how.step2.pHtml}}</p></li>
+      <li class="method-step"><p class="n">3</p><h4>{{how.step3.h4}}</h4><p>{{how.step3.pHtml}}</p></li>
+      <li class="method-step"><p class="n">4</p><h4>{{how.step4.h4}}</h4><p>{{how.step4.pHtml}}</p></li>
+      <li class="method-step"><p class="n">5</p><h4>{{how.step5.h4}}</h4><p>{{how.step5.pHtml}}</p></li>
+    </ol>
+  </div>
+</section>
+
+<section class="band" id="signature">
+  <div class="inner">
+    <p class="eyebrow">{{sig.eyebrow}}</p>
+    <h2 class="h-section">{{sig.h2}}</h2>
+    <p class="body-p" style="max-width:720px">{{sig.pHtml}}</p>
+
+    <div class="swatches">
+      <article class="pms-swatch pms-swatch--full">
+        <div class="pms-chip"><span class="pms-code">PMS 5773 C</span><span class="pms-state">{{sig.full.name}}</span></div>
+        <p class="pms-desc">{{sig.full.desc}}</p>
+      </article>
+      <article class="pms-swatch pms-swatch--trunc">
+        <div class="pms-chip"><span class="pms-code">PMS 138 C</span><span class="pms-state">{{sig.trunc.name}}</span></div>
+        <p class="pms-desc">{{sig.trunc.descHtml}}</p>
+      </article>
+      <article class="pms-swatch pms-swatch--comp">
+        <div class="pms-chip"><span class="pms-code">PMS 165 C</span><span class="pms-state">{{sig.comp.name}}</span></div>
+        <p class="pms-desc">{{sig.comp.descHtml}}</p>
+      </article>
+      <article class="pms-swatch pms-swatch--name">
+        <div class="pms-chip"><span class="pms-code">PMS 179 C</span><span class="pms-state">{{sig.nameOnly.name}}</span></div>
+        <p class="pms-desc">{{sig.nameOnly.desc}}</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="band band--tint" id="before-after">
+  <div class="inner">
+    <p class="eyebrow">{{ba.eyebrow}}</p>
+    <h2 class="h-section">{{ba.h2}}</h2>
+
+    <div class="two-cost">
+      <div class="cost">
+        <h4>{{ba.before.h4}}</h4>
+        <p class="big">{{ba.before.bigHtml}}</p>
+        <p>{{ba.before.p}}</p>
+      </div>
+      <div class="cost">
+        <h4>{{ba.after.h4}}</h4>
+        <p class="big">{{ba.after.bigHtml}}</p>
+        <p>{{ba.after.p}}</p>
+      </div>
+    </div>
+
+    <div class="two-cost" style="margin-top:32px">
+      <div class="term" aria-label="{{ba.before.h4}}">
+        <div class="term-chrome"><span class="term-title">before · fraction 0.01</span></div>
+<pre class="term-body"><span class="prompt">skills   </span>  318 discovered
+  <span class="bad">name-only    </span>  <b>318</b>   ← <span class="bad">100 %</span>
+  <span class="ok">full         </span>    0
+
+<span class="warn">model sees:</span>  <span class="comment">318 slugs, zero context</span>
+<span class="warn">est. cost:</span>   ~ 2.0 k tokens/turn
+</pre>
+      </div>
+      <div class="term" aria-label="{{ba.after.h4}}">
+        <div class="term-chrome"><span class="term-title">after · fraction 0.15</span></div>
+<pre class="term-body"><span class="prompt">skills   </span>  318 discovered
+  <span class="ok">full         </span>  <b>318</b>   ← <span class="ok">100 %</span>
+  <span class="bad">name-only    </span>    0
+
+<span class="ok">model sees:</span>  <span class="comment">318 slugs + full descriptions</span>
+<span class="accent">est. cost:</span>  ~ 18.9 k tokens/turn  (9.4 % of window)
+</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="tune">
+  <div class="inner">
+    <p class="eyebrow">{{knobs.eyebrow}}</p>
+    <h2 class="h-section">{{knobs.h2}}</h2>
+
+    <dl class="kv">
+      <dt><code>skillListingBudgetFraction</code></dt>
+      <dd>{{knobs.knob1.dd}}</dd>
+
+      <dt><code>skillListingMaxDescChars</code></dt>
+      <dd>{{knobs.knob2.dd}}</dd>
+
+      <dt><code>--ctx &lt;tokens&gt;</code></dt>
+      <dd>{{knobs.knob3.dd}}</dd>
+
+      <dt><code>--json</code></dt>
+      <dd>{{knobs.knob4.dd}}</dd>
+
+      <dt><code>--verbose</code></dt>
+      <dd>{{knobs.knob5.dd}}</dd>
+
+      <dt><code>--lang &lt;code&gt;</code></dt>
+      <dd>{{knobs.knob6.dd}}</dd>
+    </dl>
+  </div>
+</section>
+
+<section class="band band--dark" id="install">
+  <div class="inner">
+    <div class="cta-band">
+      <div class="cta-copy">
+        <p class="eyebrow">{{cta.eyebrow}}</p>
+        <h2 class="h-section">{{cta.h2}}</h2>
+        <p class="lede">{{cta.lede}}</p>
+        <div class="hero-cta">
+          <a class="btn" href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">{{cta.githubBtn}}</a>
+          <a class="btn btn--ghost" href="#how">{{cta.howBtn}}</a>
+        </div>
+      </div>
+<pre class="cta-code"><span class="comment"># {{cta.codeComment}}</span>
+<span class="prompt">/plugin marketplace add</span> alwinlin/pms-inspector
+<span class="prompt">/plugin install</span> pms-inspector@pms-inspector
+<span class="prompt">/pms-inspector</span>
+</pre>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <span>{{foot.copy}}</span>
+    <span class="foot-right">
+      <a href="https://github.com/alwinlin/pms-inspector" target="_blank" rel="noopener">{{foot.githubLink}}</a> ·
+      <a href="https://claude.com/product/claude-code" target="_blank" rel="noopener">{{foot.ccLink}}</a>
+    </span>
+  </div>
+</footer>
+
+<script>
+document.addEventListener('click', function (e) {
+  document.querySelectorAll('.lang').forEach(function (el) {
+    var inside = el.contains(e.target);
+    var onBtn  = e.target.closest && e.target.closest('.lang-btn');
+    if (inside && onBtn) { el.classList.toggle('open'); }
+    else if (!inside)    { el.classList.remove('open'); }
+  });
+});
+</script>
+
+</body>
+</html>

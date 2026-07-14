@@ -17,6 +17,12 @@ commands/pms-inspector.md        Slash-command definition (frontmatter + Bash bo
 scripts/inspect.js               Audit script entry point (pipeline + rendering).
 scripts/lib/i18n.js              Multi-language dictionary (8 langs) + language detection.
 scripts/lib/width.js             East-Asian-Width aware column arithmetic for table alignment.
+
+docs/_template.html              Single HTML master with {{a.b.c}} placeholders.
+docs/_i18n.json                  Keyset per language (8 top-level keys, identical shape).
+docs/_build.mjs                  Zero-dep Node renderer → 8 localized *.html files.
+docs/{index,zh-CN,zh-TW,ja,ko,fr,de,es}.html   Generated — do not hand-edit.
+docs/style.css                   Editorial CSS around Anthropic-brand tokens.
 ```
 
 The command markdown does one thing — shell out to the script, with a fallback resolver for `$CLAUDE_PLUGIN_ROOT`:
@@ -102,6 +108,23 @@ grep -rn "cc-context-inspector\|context-inspect" .
 ```
 
 There are no build, lint, or test frameworks. Verification = running the script and reading the report.
+
+## Editing the docs site (GitHub Pages)
+
+The `docs/` site is 8 localized pages generated from **one** master + **one** keyset:
+
+- Copy edits (any language): edit `docs/_i18n.json` under the relevant top-level lang key, then run `node docs/_build.mjs`. The build overwrites all 8 `docs/*.html` and reports byte counts per file. Missing keys fall back to `en` with a console warning; a placeholder present in the template but absent in both the target lang **and** `en` is a hard error.
+- Structural edits (new section, moved element, CSS class change): edit `docs/_template.html` (placeholder syntax `{{a.b.c}}` — dot-path into the per-language object), add the new keys to **every** lang in `docs/_i18n.json` (keyset must stay identical across langs), then `node docs/_build.mjs`.
+- **Never** hand-edit `docs/index.html` or `docs/{zh-CN,zh-TW,ja,ko,fr,de,es}.html`. They are build output; the next `_build.mjs` run overwrites your changes. The generated files are committed to the repo because GitHub Pages serves them directly (no build step on Pages).
+- The `{{langDropdown}}` placeholder is special — the build script precomputes an 8-row `<a>` list from `LANGS` and marks the current page with `class="current"`. Do not put a manual dropdown in the template.
+- Constraints inherited from the inspector: **zero npm deps** (Node builtins only), Python banned, cross-platform (`fs` API, no shelling out). The docs site itself is allowed one external dependency: Google Fonts CDN for Fraunces / Inter / JetBrains Mono (free stand-ins for Anthropic's proprietary `anthropicSerif`/`Sans`/`Mono`).
+
+Verify after any docs edit:
+
+```bash
+node docs/_build.mjs                        # 8 files rewritten; watch for [lang] fallback warnings
+grep -l "{{" docs/*.html                    # must return nothing — no unresolved placeholders
+```
 
 ## Renaming the plugin — five-place rule
 
