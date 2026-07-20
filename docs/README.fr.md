@@ -82,9 +82,10 @@ Le correctif tient sur une ligne dans `~/.claude/settings.json` :
 ```
 /plugin marketplace add https://github.com/alwinlin23/pms-inspector
 /plugin install pms-inspector@pms-inspector
+/plugin reload
 ```
 
-Puis, dans une nouvelle session Claude Code :
+Puis lancez :
 
 ```
 /pms-inspector

@@ -82,9 +82,10 @@ El arreglo cabe en una línea de `~/.claude/settings.json`:
 ```
 /plugin marketplace add https://github.com/alwinlin23/pms-inspector
 /plugin install pms-inspector@pms-inspector
+/plugin reload
 ```
 
-Luego, en una nueva sesión de Claude Code:
+Luego ejecute:
 
 ```
 /pms-inspector

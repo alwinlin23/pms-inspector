@@ -101,6 +101,7 @@ node scripts/inspect.js --ctx 128000       # override assumed context window
 # In a Claude Code session:
 #   /plugin marketplace add /Users/pgg/qa/claude/pms-inspector
 #   /plugin install pms-inspector@pms-inspector
+#   /plugin reload
 #   /pms-inspector
 
 # Rename hygiene — after any rename, must return zero hits:

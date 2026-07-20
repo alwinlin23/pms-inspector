@@ -82,9 +82,10 @@ est. cost:   ~ 18.9 k tokens / turn   (200k 窗口的 9.4 %)
 ```
 /plugin marketplace add https://github.com/alwinlin23/pms-inspector
 /plugin install pms-inspector@pms-inspector
+/plugin reload
 ```
 
-然后开一个新的 Claude Code session:
+然后运行：
 
 ```
 /pms-inspector
